@@ -1,0 +1,15 @@
+[
+ {
+    "name": "Isabella Thompson",
+    "email": "isabella.thompson@example.com",
+    "phones": [
+      "+1 (555) 012-3456"
+    ],
+    "address": "707 Walnut Street, Atlanta, GA 30301",
+    "company": "Thompson Real Estate",
+    "birthday": "1987-04-11",
+    "notes": "Real estate agent, helped find current apartment",
+    "favorite": true,
+    "groups": ["Real Estate"]
+  }
+]
