@@ -146,3 +146,57 @@ If Jenkins does not trigger:
 - Check Jenkins is reachable from GitHub (public URL or tunnel/reverse proxy).
 - Verify webhook URL ends with `/github-webhook/`.
 - Check Jenkins system logs and webhook delivery response code.
+
+## 7. Production Deployment (Automated)
+
+This repository now includes a deployment flow that can ship to a Linux VM after CI passes.
+
+### Files Used
+
+- `docker-compose.prod.yml`: production-safe compose stack (MongoDB not publicly exposed)
+- `scripts/deploy-remote.sh`: uploads and deploys the release package over SSH
+- `Jenkinsfile` stage: `Deploy to VM` runs only on `main` branch
+
+### Jenkins Requirements for Deployment
+
+1. Install **SSH Agent Plugin**.
+2. Add Jenkins credential:
+	- Kind: `SSH Username with private key`
+	- ID: `deploy-ssh-key`
+3. Add Jenkins environment variables (job or folder level):
+	- `DEPLOY_HOST` = your VM public DNS or IP
+	- `DEPLOY_USER` = SSH user on VM (for example `ubuntu`)
+	- Optional `DEPLOY_PATH` = target path on VM (default `/opt/contact-manager`)
+
+### VM Prerequisites
+
+On the target Linux VM, install Docker + Docker Compose plugin and ensure the deploy user can run Docker commands.
+
+### Deployment Flow
+
+1. Push to `main`.
+2. Jenkins runs build + smoke test.
+3. Jenkins packages repo to `release.tgz`.
+4. Jenkins copies package to VM via SSH.
+5. VM executes:
+	- `docker compose -f docker-compose.prod.yml up -d --build --remove-orphans`
+
+### Verify Deployment
+
+1. Open your public app URL.
+2. Check backend health (from VM): `curl http://localhost:4000/api/health`.
+3. In Jenkins build logs, confirm stage `Deploy to VM` is successful.
+
+### First Deployment Checklist
+
+1. In Jenkins job configuration, set:
+	- `DEPLOY_HOST`
+	- `DEPLOY_USER`
+	- Optional `DEPLOY_PATH`
+2. Add SSH credential with ID `deploy-ssh-key`.
+3. Ensure VM firewall allows SSH and HTTP/HTTPS.
+4. Push to `main` branch to trigger CI + deploy automatically.
+5. If this is the first deployment, update generated files on VM:
+	- `.env`
+	- `backend/.env`
+	with real production secrets and URLs.

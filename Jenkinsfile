@@ -20,6 +20,7 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT = "contact-manager-${env.BUILD_NUMBER}"
+        DEPLOY_PATH = '/opt/contact-manager'
     }
 
     stages {
@@ -79,6 +80,38 @@ pipeline {
                         'curl -fsS http://localhost:3000 > /dev/null',
                         'powershell -NoProfile -Command "Invoke-WebRequest -Uri http://localhost:3000 | Out-Null"'
                     )
+                }
+            }
+        }
+
+        stage('Deploy to VM') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    if (!isUnix()) {
+                        error('Deploy stage requires a Linux agent with ssh/scp/tar.')
+                    }
+
+                    if (!env.DEPLOY_HOST || !env.DEPLOY_USER) {
+                        error('Missing DEPLOY_HOST or DEPLOY_USER environment values in Jenkins job configuration.')
+                    }
+
+                    sh '''#!/usr/bin/env bash
+set -e
+tar -czf release.tgz \
+  --exclude=.git \
+  --exclude=node_modules \
+  --exclude=backend/node_modules \
+  --exclude=dist \
+  .
+chmod +x scripts/deploy-remote.sh
+'''
+
+                    sshagent(credentials: ['deploy-ssh-key']) {
+                        sh './scripts/deploy-remote.sh'
+                    }
                 }
             }
         }
