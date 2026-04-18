@@ -13,13 +13,23 @@ dotenv.config()
 
 const app = express()
 const httpServer = createServer(app)
-const FRONTEND_ORIGINS = [
+const DEFAULT_FRONTEND_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
   'http://localhost:3000',
   'http://localhost:3001'
-];
+]
+
+const FRONTEND_ORIGINS = [
+  ...new Set([
+    ...(process.env.FRONTEND_ORIGIN || '')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+    ...DEFAULT_FRONTEND_ORIGINS,
+  ]),
+]
 
 const io = new Server(httpServer, {
   cors: {

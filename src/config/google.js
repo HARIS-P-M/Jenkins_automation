@@ -9,7 +9,7 @@
 
 export const GOOGLE_CONFIG = {
   CLIENT_ID: '581491459372-hcmdpee5e1qg0e4qn9vhrtmmnmp40qqs.apps.googleusercontent.com',
-  API_KEY: 'AIzaSyC5qN9r2-9UZIk6BBvcO_VlzK29cz7K7Ms',
+  API_KEY: import.meta.env.VITE_GOOGLE_API_KEY || '',
   SCOPES: [
     'https://www.googleapis.com/auth/contacts',
     'https://www.googleapis.com/auth/user.emails.read'
@@ -21,7 +21,7 @@ export const GOOGLE_CONFIG = {
 
 // Instructions for setup:
 // 1. CLIENT_ID: Found in your OAuth 2.0 client credentials
-// 2. API_KEY: Found in your project's API keys section
+// 2. API_KEY: Set VITE_GOOGLE_API_KEY in your .env file
 // 3. Make sure to add your domain (including localhost:5173 for development) to authorized origins
 // 4. Enable the People API in your Google Cloud Console
 

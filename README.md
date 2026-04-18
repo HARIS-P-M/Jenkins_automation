@@ -59,18 +59,16 @@ To enable Google Contacts integration, follow these steps:
 2. Click **Create Credentials** > **API Key**
 3. Copy the **API Key**
 
-### 4. Update Configuration
+### 4. Update Environment Variables
 
-1. Open `src/config/google.js`
-2. Replace the placeholder values:
+1. Open `.env`
+2. Add or update this key:
 
-```javascript
-export const GOOGLE_CONFIG = {
-  CLIENT_ID: '123456789-abcdef.apps.googleusercontent.com', // Your actual Client ID
-  API_KEY: 'AIzaSyC...', // Your actual API Key
-  // ... rest of config
-}
+```env
+VITE_GOOGLE_API_KEY=AIzaSyC...
 ```
+
+3. Keep `.env` out of version control and commit only `.env.example`
 
 ### 5. Test Integration
 
