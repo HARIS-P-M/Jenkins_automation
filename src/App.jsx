@@ -200,10 +200,10 @@ export default function App() {
     try {
       const token = localStorage.getItem('authToken')
       const [emailRes, smsRes] = await Promise.all([
-        fetch('http://localhost:4000/api/messages/email/unread-count', {
+        fetch(`${import.meta.env.VITE_API_BASE || '/api'}/messages/email/unread-count`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:4000/api/messages/sms/unread-count', {
+        fetch(`${import.meta.env.VITE_API_BASE || '/api'}/messages/sms/unread-count`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ])

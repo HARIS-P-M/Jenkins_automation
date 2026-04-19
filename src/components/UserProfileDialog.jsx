@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '../utils/storage';
 
 // Import the API_BASE URL from storage.js
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = (import.meta.env.VITE_API_BASE || '/api');
 
 export default function UserProfileDialog({ open, onClose }) {
   const [loading, setLoading] = useState(false);

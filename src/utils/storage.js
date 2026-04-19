@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:4000/api'
+const API_BASE = (import.meta.env.VITE_API_BASE || '/api')
 
 const TOKEN_KEY = 'cm_auth_token'
 const USER_KEY = 'cm_auth_user'

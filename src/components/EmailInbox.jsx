@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { getAuthToken } from '../utils/storage.js'
 
-const API_BASE = 'http://localhost:4000/api'
+const API_BASE = (import.meta.env.VITE_API_BASE || '/api')
 
 export default function EmailInbox({ onClose, onReply, onMessageRead }) {
   const [activeTab, setActiveTab] = useState('inbox') // 'inbox' | 'sent'

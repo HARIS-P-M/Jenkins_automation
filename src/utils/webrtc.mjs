@@ -18,7 +18,7 @@ class WebRTCService {
     this.isConnecting = true;
 
     try {
-      this.socket = io('http://localhost:4000', {
+      this.socket = io(`${(import.meta.env.VITE_API_BASE || '/api').replace('/api', '')}`, {
         reconnection: true,
         reconnectionAttempts: 3,
         reconnectionDelay: 1000,

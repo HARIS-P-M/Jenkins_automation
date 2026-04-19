@@ -42,7 +42,7 @@ export default function SMSSender({ recipient, recipientName, onClose }) {
 
     try {
       const token = getAuthToken()
-      const response = await fetch('http://localhost:4000/api/send-sms', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE || '/api'}/send-sms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
