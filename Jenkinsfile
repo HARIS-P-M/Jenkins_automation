@@ -41,6 +41,17 @@ pipeline {
             }
         }
 
+        stage('Prepare Environment') {
+            steps {
+                script {
+                    runStep(
+                        'cp .env.example .env || true && cp backend/.env.example backend/.env || true',
+                        'copy .env.example .env && copy backend\\.env.example backend\\.env'
+                    )
+                }
+            }
+        }
+
         stage('Build Images') {
             steps {
                 script {
