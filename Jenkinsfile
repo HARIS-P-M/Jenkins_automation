@@ -83,12 +83,12 @@ pipeline {
                     )
 
                     runStep(
-                        'curl -fsS http://localhost:4000/api/health',
+                        'curl -fsS http://host.docker.internal:4000/api/health || docker exec ${COMPOSE_PROJECT}-backend-1 wget -qO- http://127.0.0.1:4000/api/health',
                         'powershell -NoProfile -Command "Invoke-RestMethod -Uri http://localhost:4000/api/health | Out-Null"'
                     )
 
                     runStep(
-                        'curl -fsS http://localhost:3000 > /dev/null',
+                        'curl -fsS http://host.docker.internal:3000 > /dev/null || docker exec ${COMPOSE_PROJECT}-frontend-1 wget -qO- http://127.0.0.1:80 > /dev/null',
                         'powershell -NoProfile -Command "Invoke-WebRequest -Uri http://localhost:3000 | Out-Null"'
                     )
                 }
