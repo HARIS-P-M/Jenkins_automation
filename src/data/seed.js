@@ -4,9 +4,9 @@ export function getSeedData() {
   const contacts = [
     {
       id: generateId(),
-      name: 'Leslie Alexander',
+      name: 'kalanithi',
       email: 'leslie@example.com',
-      phones: ['+1 555 010 1111'],
+      phones: ['+91 8122079151'],
     },
     {
       id: generateId(),
