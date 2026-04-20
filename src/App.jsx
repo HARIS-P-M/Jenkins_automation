@@ -170,6 +170,7 @@ export default function App() {
 
   useEffect(() => {
     seedIfEmpty()
+    console.log('Automated Jenkins Pipeline Successfully Deployed!')
   }, [])
   
   // Make createGroup function accessible from anywhere
