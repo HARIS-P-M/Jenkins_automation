@@ -87,9 +87,9 @@ jobs:
             # You can uncomment and modify this if your packages are private:
             # kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=${{ github.actor }} --docker-password=${{ secrets.GITHUB_TOKEN }} --docker-email=your-email@example.com -n default --dry-run=client -o yaml | kubectl apply -f -
             
-            # Apply all k8s manifests
-            kubectl apply -f ~/contact-manager-k8s/k8s/
+            # Apply all k8s manifests using sudo to accommodate default k3s permissions
+            sudo kubectl apply -f ~/contact-manager-k8s/k8s/
             
             # Wait for rollouts
-            kubectl rollout status deployment/frontend --timeout=60s || true
-            kubectl rollout status deployment/backend --timeout=60s || true
+            sudo kubectl rollout status deployment/frontend --timeout=60s || true
+            sudo kubectl rollout status deployment/backend --timeout=60s || true
