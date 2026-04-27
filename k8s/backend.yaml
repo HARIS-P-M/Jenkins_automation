@@ -24,8 +24,8 @@ spec:
           value: "4000"
         - name: MONGO_URI
           value: "mongodb://mongo:27017/contact_manager"
-      # imagePullSecrets:
-      # - name: ghcr-secret
+      imagePullSecrets:
+      - name: ghcr-secret
 ---
 apiVersion: v1
 kind: Service
