@@ -68,7 +68,7 @@ jobs:
           sed -i "s|ghcr.io/YOUR_REPO/contact-manager-backend:latest|${{ env.REGISTRY }}/${{ env.REPO }}/contact-manager-backend:${{ github.sha }}|g" k8s/backend.yaml
 
       - name: Copy k8s manifests to EC2
-        uses: appleboy/scp-action@main
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu # Change to root, ec2-user, or debian depending on your AMI
@@ -77,7 +77,7 @@ jobs:
           target: "~/contact-manager-k8s"
 
       - name: Apply manifests on EC2 K3s
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu # Change to root, ec2-user, or debian depending on your AMI
