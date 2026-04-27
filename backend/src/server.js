@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import nodemailer from 'nodemailer'
+import promBundle from 'express-prom-bundle'
 
 dotenv.config()
 
@@ -48,6 +49,10 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '10mb' }))
 app.use(morgan('dev'))
+
+// Configure Prometheus metrics endpoint
+const metricsMiddleware = promBundle({includeMethod: true, includePath: true, includeStatusCode: true});
+app.use(metricsMiddleware)
 
 // Configure nodemailer
 const EMAIL_USER = process.env.EMAIL_USER || 'your_email@gmail.com'
