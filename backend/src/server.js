@@ -38,12 +38,12 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  pingTimeout: 60000, // Increase ping timeout for mobile networks
+  pingTimeout: 60000,
   pingInterval: 25000,
   transports: ['websocket', 'polling'] // Enable all transport methods
 })
 
-app.use(cors({ 
+app.use(cors({
   origin: FRONTEND_ORIGINS,
   credentials: true
 }))
@@ -52,8 +52,8 @@ app.use(morgan('dev'))
 
 // Configure Prometheus metrics endpoint
 const metricsMiddleware = promBundle({
-  includeMethod: true, 
-  includePath: true, 
+  includeMethod: true,
+  includePath: true,
   includeStatusCode: true,
   promClient: {
     collectDefaultMetrics: {}
@@ -298,28 +298,28 @@ app.post('/api/auth/setup-2fa', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user
     const { method } = req.body
-    
+
     if (!['email', 'app'].includes(method)) {
       return res.status(400).json({ error: 'Invalid 2FA method' })
     }
-    
+
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    
+
     // Generate a random secret for app-based 2FA
     let secret = null
     if (method === 'app') {
       // In a production app, use a proper TOTP library
       secret = crypto.randomBytes(20).toString('hex').toUpperCase()
     }
-    
+
     user.twoFactorMethod = method
     user.twoFactorSecret = secret
     user.twoFactorEnabled = false // Will be enabled after verification
     await user.save()
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       method,
       secret
     })
@@ -333,20 +333,20 @@ app.post('/api/auth/verify-2fa', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user
     const { code, method } = req.body
-    
+
     if (!code || code.length !== 6 || !/^\d+$/.test(code)) {
       return res.status(400).json({ error: 'Invalid verification code' })
     }
-    
+
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    
+
     // In a real app, validate the code against the method and secret
     // For this demo, we'll just accept any 6-digit code
-    
+
     user.twoFactorEnabled = true
     await user.save()
-    
+
     res.json({ success: true })
   } catch (e) {
     res.status(400).json({ error: e.message })
@@ -357,15 +357,15 @@ app.post('/api/auth/verify-2fa', authMiddleware, async (req, res) => {
 app.post('/api/auth/disable-2fa', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user
-    
+
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    
+
     user.twoFactorEnabled = false
     user.twoFactorMethod = null
     user.twoFactorSecret = null
     await user.save()
-    
+
     res.json({ success: true })
   } catch (e) {
     res.status(400).json({ error: e.message })
@@ -378,7 +378,7 @@ app.get('/api/user/profile', authMiddleware, async (req, res) => {
     const { userId } = req.user
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    
+
     // Return only necessary user data
     res.json({
       id: user._id,
@@ -397,17 +397,17 @@ app.put('/api/user/profile', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user
     const { name, mobileNumber, recoveryEmail } = req.body
-    
+
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    
+
     // Update only allowed fields
     if (name !== undefined) user.name = name
     if (mobileNumber !== undefined) user.mobileNumber = mobileNumber
     if (recoveryEmail !== undefined) user.recoveryEmail = recoveryEmail
-    
+
     await user.save()
-    
+
     // Return updated user data
     res.json({
       id: user._id,
@@ -428,10 +428,10 @@ app.get('/api/contacts', authMiddleware, async (req, res) => {
   const all = await Contact.find({ ownerId: req.user.userId }).sort({ favorite: -1, name: 1 })
   const filtered = q
     ? all.filter(c => (
-        c.name?.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q) ||
-        (c.phones || []).some(p => p.toLowerCase().includes(q))
-      ))
+      c.name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
+      (c.phones || []).some(p => p.toLowerCase().includes(q))
+    ))
     : all
   res.json(filtered)
 })
@@ -499,18 +499,18 @@ app.get('/api/groups', authMiddleware, async (req, res) => {
     const groups = await ContactGroup.find({ ownerId: req.user.userId }).sort({ name: 1 })
     // Count contacts in each group
     const counts = await Promise.all(groups.map(async group => {
-      const count = await Contact.countDocuments({ 
-        ownerId: req.user.userId, 
-        groups: group._id 
+      const count = await Contact.countDocuments({
+        ownerId: req.user.userId,
+        groups: group._id
       })
       return { id: group._id.toString(), count }
     }))
-    
+
     const result = groups.map(g => {
       const countObj = counts.find(c => c.id === g._id.toString())
       return { ...g.toJSON(), count: countObj ? countObj.count : 0 }
     })
-    
+
     res.json(result)
   } catch (e) {
     res.status(400).json({ error: e.message })
@@ -521,10 +521,10 @@ app.post('/api/groups', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body
     if (!name) return res.status(400).json({ error: 'Group name is required' })
-    
-    const created = await ContactGroup.create({ 
-      name, 
-      ownerId: req.user.userId 
+
+    const created = await ContactGroup.create({
+      name,
+      ownerId: req.user.userId
     })
     res.status(201).json(created)
   } catch (e) {
@@ -536,13 +536,13 @@ app.put('/api/groups/:id', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body
     if (!name) return res.status(400).json({ error: 'Group name is required' })
-    
+
     const updated = await ContactGroup.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.user.userId },
       { name },
       { new: true }
     )
-    
+
     if (!updated) return res.status(404).json({ error: 'Group not found' })
     res.json(updated)
   } catch (e) {
@@ -554,16 +554,16 @@ app.delete('/api/groups/:id', authMiddleware, async (req, res) => {
   try {
     const group = await ContactGroup.findOne({ _id: req.params.id, ownerId: req.user.userId })
     if (!group) return res.status(404).json({ error: 'Group not found' })
-    
+
     // Remove group from all contacts
     await Contact.updateMany(
       { ownerId: req.user.userId, groups: group._id },
       { $pull: { groups: group._id } }
     )
-    
+
     // Delete the group
     await ContactGroup.deleteOne({ _id: group._id })
-    
+
     res.status(200).json({ success: true })
   } catch (e) {
     res.status(400).json({ error: e.message })
@@ -575,18 +575,18 @@ app.post('/api/contacts/:id/groups', authMiddleware, async (req, res) => {
   try {
     const { groupId } = req.body
     if (!groupId) return res.status(400).json({ error: 'Group ID is required' })
-    
+
     // Verify group exists and belongs to user
     const group = await ContactGroup.findOne({ _id: groupId, ownerId: req.user.userId })
     if (!group) return res.status(404).json({ error: 'Group not found' })
-    
+
     // Add contact to group
     const contact = await Contact.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.user.userId },
       { $addToSet: { groups: group._id } },
       { new: true }
     )
-    
+
     if (!contact) return res.status(404).json({ error: 'Contact not found' })
     res.json(contact)
   } catch (e) {
@@ -600,14 +600,14 @@ app.delete('/api/contacts/:id/groups/:groupId', authMiddleware, async (req, res)
     // Verify group exists and belongs to user
     const group = await ContactGroup.findOne({ _id: req.params.groupId, ownerId: req.user.userId })
     if (!group) return res.status(404).json({ error: 'Group not found' })
-    
+
     // Remove contact from group
     const contact = await Contact.findOneAndUpdate(
       { _id: req.params.id, ownerId: req.user.userId },
       { $pull: { groups: group._id } },
       { new: true }
     )
-    
+
     if (!contact) return res.status(404).json({ error: 'Contact not found' })
     res.json(contact)
   } catch (e) {
@@ -620,12 +620,12 @@ app.get('/api/groups/:id/contacts', authMiddleware, async (req, res) => {
   try {
     const group = await ContactGroup.findOne({ _id: req.params.id, ownerId: req.user.userId })
     if (!group) return res.status(404).json({ error: 'Group not found' })
-    
-    const contacts = await Contact.find({ 
+
+    const contacts = await Contact.find({
       ownerId: req.user.userId,
-      groups: group._id 
+      groups: group._id
     }).sort({ favorite: -1, name: 1 })
-    
+
     res.json(contacts)
   } catch (e) {
     res.status(400).json({ error: e.message })
@@ -661,7 +661,7 @@ async function migrateOwnerIds() {
 }
 
 // Run lightweight migration on startup (non-blocking)
-try { migrateOwnerIds() } catch {}
+try { migrateOwnerIds() } catch { }
 
 const port = process.env.PORT || 4000
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
@@ -680,13 +680,13 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user
     const { to, subject, message, attachments } = req.body
-    
+
     console.log('Email request received:', { to, subject, messageLength: message?.length, attachmentsCount: attachments?.length || 0 });
-    
+
     if (!to || !subject || !message) {
       return res.status(400).json({ error: 'To, subject and message are required' })
     }
-    
+
     // Validate attachments size (max 10MB total)
     if (attachments && attachments.length > 0) {
       const totalSize = attachments.reduce((sum, att) => sum + (att.size || 0), 0)
@@ -694,16 +694,16 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'Total attachments size exceeds 10MB limit' })
       }
     }
-    
+
     // Get user details for the 'from' field
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    
+
     console.log('User found:', user.email);
-    
+
     // Email configuration for demo
     const isDemoMode = DEMO_MODE || EMAIL_USER === 'your_email@gmail.com';
-    
+
     if (isDemoMode) {
       // In demo mode, just log the email and return success
       console.log('DEMO MODE: Email would be sent with:', {
@@ -712,10 +712,10 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
         subject,
         messagePreview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
       });
-      
+
       // Wait a bit to simulate email sending
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Save email to database as sent
       await EmailMessage.create({
         ownerId: userId,
@@ -727,7 +727,7 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
         type: 'sent',
         timestamp: new Date()
       });
-      
+
       // Check if recipient is a registered user and create received message
       const recipient = await User.findOne({ email: to });
       if (recipient) {
@@ -742,11 +742,11 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
           timestamp: new Date()
         });
       }
-      
+
       // Return success response
       return res.json({ success: true, message: 'Email sent successfully (demo mode)' });
     }
-    
+
     // In production mode with real credentials:
     const mailOptions = {
       from: EMAIL_USER,
@@ -755,17 +755,17 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
       text: message,
       replyTo: user.email
     }
-    
-    console.log('Sending email with options:', { 
-      from: EMAIL_USER, 
-      to, 
+
+    console.log('Sending email with options:', {
+      from: EMAIL_USER,
+      to,
       subject,
-      replyTo: user.email 
+      replyTo: user.email
     });
-    
+
     const info = await transporter.sendMail(mailOptions)
     console.log('Email sent successfully:', info.response);
-    
+
     // Save email to database as sent
     await EmailMessage.create({
       ownerId: userId,
@@ -777,7 +777,7 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
       type: 'sent',
       timestamp: new Date()
     });
-    
+
     // Check if recipient is a registered user and create received message
     const recipient = await User.findOne({ email: to });
     if (recipient) {
@@ -792,7 +792,7 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
         timestamp: new Date()
       });
     }
-    
+
     res.json({ success: true, message: 'Email sent successfully' })
   } catch (e) {
     console.error('Error sending email:', e)
@@ -805,30 +805,30 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user
     const { to, message } = req.body
-    
+
     console.log('SMS request received:', { to, messageLength: message?.length });
-    
+
     if (!to || !message) {
       return res.status(400).json({ error: 'Phone number and message are required' })
     }
-    
+
     // Get user details
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    
+
     console.log('User found:', user.email);
-    
+
     // Twilio configuration
     const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID
     const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
     const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER
-    
+
     // Check if Twilio is configured
-    const isTwilioConfigured = TWILIO_ACCOUNT_SID && 
-                               TWILIO_AUTH_TOKEN && 
-                               TWILIO_PHONE_NUMBER &&
-                               TWILIO_ACCOUNT_SID !== 'your_twilio_account_sid'
-    
+    const isTwilioConfigured = TWILIO_ACCOUNT_SID &&
+      TWILIO_AUTH_TOKEN &&
+      TWILIO_PHONE_NUMBER &&
+      TWILIO_ACCOUNT_SID !== 'your_twilio_account_sid'
+
     if (!isTwilioConfigured) {
       // Demo mode - simulate SMS sending
       console.log('DEMO MODE: SMS would be sent with:', {
@@ -836,10 +836,10 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
         to,
         messagePreview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
       });
-      
+
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Save SMS to database as sent
       await SMSMessage.create({
         ownerId: userId,
@@ -849,7 +849,7 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
         type: 'sent',
         timestamp: new Date()
       });
-      
+
       // Check if recipient is a registered user and create received message
       const recipient = await User.findOne({ mobileNumber: to });
       if (recipient) {
@@ -862,29 +862,29 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
           timestamp: new Date()
         });
       }
-      
+
       // Return success response
-      return res.json({ 
-        success: true, 
+      return res.json({
+        success: true,
         message: 'SMS sent successfully (demo mode)',
         messageId: `demo_${Date.now()}`
       });
     }
-    
+
     // Production mode with Twilio
     try {
       // Dynamically import Twilio (only if configured)
       const twilio = await import('twilio')
       const client = twilio.default(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-      
+
       const messageResponse = await client.messages.create({
         body: message,
         from: TWILIO_PHONE_NUMBER,
         to: to
       })
-      
+
       console.log('SMS sent successfully:', messageResponse.sid);
-      
+
       // Save SMS to database as sent
       await SMSMessage.create({
         ownerId: userId,
@@ -894,7 +894,7 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
         type: 'sent',
         timestamp: new Date()
       });
-      
+
       // Check if recipient is a registered user and create received message
       const recipient = await User.findOne({ mobileNumber: to });
       if (recipient) {
@@ -907,9 +907,9 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
           timestamp: new Date()
         });
       }
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: 'SMS sent successfully',
         messageId: messageResponse.sid
       })
@@ -928,12 +928,12 @@ app.get('/api/messages/email/received', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
     const user = await User.findById(userId);
-    
-    const messages = await EmailMessage.find({ 
+
+    const messages = await EmailMessage.find({
       to: user.email,
       type: 'received'
     }).sort({ timestamp: -1 });
-    
+
     res.json({ success: true, messages });
   } catch (e) {
     console.error('Error fetching received emails:', e);
@@ -946,12 +946,12 @@ app.get('/api/messages/email/sent', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
     const user = await User.findById(userId);
-    
-    const messages = await EmailMessage.find({ 
+
+    const messages = await EmailMessage.find({
       from: user.email,
       type: 'sent'
     }).sort({ timestamp: -1 });
-    
+
     res.json({ success: true, messages });
   } catch (e) {
     console.error('Error fetching sent emails:', e);
@@ -964,12 +964,12 @@ app.get('/api/messages/sms/received', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
     const user = await User.findById(userId);
-    
-    const messages = await SMSMessage.find({ 
+
+    const messages = await SMSMessage.find({
       to: user.mobileNumber || user.email,
       type: 'received'
     }).sort({ timestamp: -1 });
-    
+
     res.json({ success: true, messages });
   } catch (e) {
     console.error('Error fetching received SMS:', e);
@@ -981,12 +981,12 @@ app.get('/api/messages/sms/received', authMiddleware, async (req, res) => {
 app.get('/api/messages/sms/sent', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    
-    const messages = await SMSMessage.find({ 
+
+    const messages = await SMSMessage.find({
       ownerId: userId,
       type: 'sent'
     }).sort({ timestamp: -1 });
-    
+
     res.json({ success: true, messages });
   } catch (e) {
     console.error('Error fetching sent SMS:', e);
@@ -998,13 +998,13 @@ app.get('/api/messages/sms/sent', authMiddleware, async (req, res) => {
 app.get('/api/messages/email/unread-count', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    
+
     const count = await EmailMessage.countDocuments({
       ownerId: userId,
       type: 'received',
       read: { $ne: true }
     });
-    
+
     res.json({ success: true, count });
   } catch (e) {
     console.error('Error fetching unread email count:', e);
@@ -1016,13 +1016,13 @@ app.get('/api/messages/email/unread-count', authMiddleware, async (req, res) => 
 app.get('/api/messages/sms/unread-count', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    
+
     const count = await SMSMessage.countDocuments({
       ownerId: userId,
       type: 'received',
       read: { $ne: true }
     });
-    
+
     res.json({ success: true, count });
   } catch (e) {
     console.error('Error fetching unread SMS count:', e);
@@ -1035,17 +1035,17 @@ app.post('/api/messages/:type/:id/read', authMiddleware, async (req, res) => {
   try {
     const { type, id } = req.params;
     const Model = type === 'email' ? EmailMessage : SMSMessage;
-    
+
     const message = await Model.findByIdAndUpdate(
       id,
       { read: true },
       { new: true }
     );
-    
+
     if (!message) {
       return res.status(404).json({ error: 'Message not found' });
     }
-    
+
     res.json({ success: true, message });
   } catch (e) {
     console.error('Error marking message as read:', e);
@@ -1058,13 +1058,13 @@ app.delete('/api/messages/:type/:id', authMiddleware, async (req, res) => {
   try {
     const { type, id } = req.params;
     const Model = type === 'email' ? EmailMessage : SMSMessage;
-    
+
     const message = await Model.findByIdAndDelete(id);
-    
+
     if (!message) {
       return res.status(404).json({ error: 'Message not found' });
     }
-    
+
     res.json({ success: true, message: 'Message deleted successfully' });
   } catch (e) {
     console.error('Error deleting message:', e);
