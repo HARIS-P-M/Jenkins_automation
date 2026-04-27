@@ -62,10 +62,11 @@ jobs:
       - name: Set lower case repository name
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
-      - name: Replace image tags in k8s manifests
+      - name: Replace image tags and secrets in k8s manifests
         run: |
           sed -i "s|ghcr.io/YOUR_REPO/contact-manager-frontend:latest|${{ env.REGISTRY }}/${{ env.REPO }}/contact-manager-frontend:${{ github.sha }}|g" k8s/frontend.yaml
           sed -i "s|ghcr.io/YOUR_REPO/contact-manager-backend:latest|${{ env.REGISTRY }}/${{ env.REPO }}/contact-manager-backend:${{ github.sha }}|g" k8s/backend.yaml
+          sed -i "s|MONGO_URI_PLACEHOLDER|${{ secrets.MONGO_URI }}|g" k8s/backend.yaml
 
       - name: Copy k8s manifests to EC2
         uses: appleboy/scp-action@v0.1.7

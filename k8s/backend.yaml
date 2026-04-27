@@ -23,7 +23,7 @@ spec:
         - name: PORT
           value: "4000"
         - name: MONGO_URI
-          value: "mongodb://mongo:27017/contact_manager"
+          value: "MONGO_URI_PLACEHOLDER"
       imagePullSecrets:
       - name: ghcr-secret
 ---
