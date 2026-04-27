@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Send Build Trigger to Jenkins
         run: |
-          curl -X POST "https://smee.io/haris-jenkins-automation" \
+          curl -X POST "https://smee.io/haris-jenkins-automation/job/contact%20manager/buildWithParameters" \
             --user "admin:${{ secrets.JENKINS_API_TOKEN }}" \
             --data-urlencode "EC2_HOST=${{ secrets.EC2_HOST }}" \
             --data-urlencode "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY }}" \
