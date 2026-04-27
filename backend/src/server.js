@@ -51,7 +51,14 @@ app.use(express.json({ limit: '10mb' }))
 app.use(morgan('dev'))
 
 // Configure Prometheus metrics endpoint
-const metricsMiddleware = promBundle({includeMethod: true, includePath: true, includeStatusCode: true});
+const metricsMiddleware = promBundle({
+  includeMethod: true, 
+  includePath: true, 
+  includeStatusCode: true,
+  promClient: {
+    collectDefaultMetrics: {}
+  }
+});
 app.use(metricsMiddleware)
 
 // Configure nodemailer
