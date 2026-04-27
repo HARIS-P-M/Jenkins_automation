@@ -11,15 +11,6 @@ jobs:
     steps:
       - name: Send Build Trigger to Jenkins
         run: |
-          curl -X POST "https://smee.io/haris-jenkins-automation" \
-            --user "admin:${{ secrets.JENKINS_API_TOKEN }}" \
-            --data-urlencode "EC2_HOST=${{ secrets.EC2_HOST }}" \
-            --data-urlencode "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY }}" \
-            --data-urlencode "MONGO_URI=${{ secrets.MONGO_URI }}" \
-            --data-urlencode "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-            --data-urlencode "FRONTEND_ORIGIN=${{ secrets.FRONTEND_ORIGIN }}" \
-            --data-urlencode "EMAIL_USER=${{ secrets.EMAIL_USER }}" \
-            --data-urlencode "EMAIL_PASS=${{ secrets.EMAIL_PASS }}" \
-            --data-urlencode "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}" \
-            --data-urlencode "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}" \
-            --data-urlencode "TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}"
+          curl -X POST "https://smee.io/haris-jenkins-automation?EC2_HOST=${{ secrets.EC2_HOST }}&EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY }}&MONGO_URI=${{ secrets.MONGO_URI }}&JWT_SECRET=${{ secrets.JWT_SECRET }}&FRONTEND_ORIGIN=${{ secrets.FRONTEND_ORIGIN }}&EMAIL_USER=${{ secrets.EMAIL_USER }}&EMAIL_PASS=${{ secrets.EMAIL_PASS }}&TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}&TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}&TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}" \
+            --user "admin:${{ secrets.JENKINS_API_TOKEN }}"
+

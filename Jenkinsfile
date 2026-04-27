@@ -22,6 +22,12 @@ pipeline {
     }
 
     stages {
+        stage('Debug Parameters') {
+            steps {
+                echo "EC2_HOST: ${params.EC2_HOST}"
+                echo "MONGO_URI: ${params.MONGO_URI ? 'SET' : 'EMPTY'}"
+            }
+        }
         stage('Checkout') {
             steps {
                 checkout scm
