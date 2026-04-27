@@ -1,0 +1,25 @@
+name: Trigger Jenkins Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  trigger-jenkins:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Build Trigger to Jenkins
+        run: |
+          curl -X POST "https://smee.io/haris-jenkins-automation/job/contact%20manager/buildWithParameters" \
+            --user "admin:${{ secrets.JENKINS_API_TOKEN }}" \
+            --data-urlencode "EC2_HOST=${{ secrets.EC2_HOST }}" \
+            --data-urlencode "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY }}" \
+            --data-urlencode "MONGO_URI=${{ secrets.MONGO_URI }}" \
+            --data-urlencode "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+            --data-urlencode "FRONTEND_ORIGIN=${{ secrets.FRONTEND_ORIGIN }}" \
+            --data-urlencode "EMAIL_USER=${{ secrets.EMAIL_USER }}" \
+            --data-urlencode "EMAIL_PASS=${{ secrets.EMAIL_PASS }}" \
+            --data-urlencode "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}" \
+            --data-urlencode "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}" \
+            --data-urlencode "TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}"
