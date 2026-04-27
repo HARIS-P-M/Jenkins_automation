@@ -14,6 +14,22 @@ spec:
       labels:
         app: grafana
     spec:
+      initContainers:
+      - name: download-dashboards
+        image: alpine:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          apk add --no-cache curl
+          # Download Node.js metrics dashboard
+          curl -sL https://grafana.com/api/dashboards/11159/revisions/1/download -o /var/lib/grafana/dashboards/nodejs.json
+          # Download Prometheus metrics dashboard
+          curl -sL https://grafana.com/api/dashboards/3662/revisions/2/download -o /var/lib/grafana/dashboards/prometheus.json
+          # Replace datasource placeholders
+          sed -i 's/${DS_PROMETHEUS}/Prometheus/g' /var/lib/grafana/dashboards/nodejs.json || true
+        volumeMounts:
+        - name: dashboards-storage
+          mountPath: /var/lib/grafana/dashboards
       containers:
       - name: grafana
         image: grafana/grafana:latest
@@ -22,6 +38,22 @@ spec:
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: "admin" # Replace with a strong password or pass via secrets
+        volumeMounts:
+        - name: grafana-datasources-volume
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: grafana-providers-volume
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboards-storage
+          mountPath: /var/lib/grafana/dashboards
+      volumes:
+      - name: grafana-datasources-volume
+        configMap:
+          name: grafana-datasources
+      - name: grafana-providers-volume
+        configMap:
+          name: grafana-dashboard-providers
+      - name: dashboards-storage
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
