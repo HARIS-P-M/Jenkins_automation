@@ -198,7 +198,7 @@ export default function App() {
   const fetchUnreadCounts = async () => {
     if (!isAuthed) return
     try {
-      const token = localStorage.getItem('authToken')
+      const token = getAuthToken()
       const [emailRes, smsRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_BASE || '/api'}/messages/email/unread-count`, {
           headers: { Authorization: `Bearer ${token}` }
