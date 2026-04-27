@@ -68,7 +68,7 @@ pipeline {
 
                         sh """
                         ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${params.EC2_HOST} "
-                            sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=haris-p-m --docker-password=$GITHUB_TOKEN_PASS --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
+                            sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=haris-p-m --docker-password=$GITHUB_TOKEN --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
                             
                             sudo kubectl create secret generic backend-secrets \\
                               --from-literal=MONGO_URI='${params.MONGO_URI}' \\
