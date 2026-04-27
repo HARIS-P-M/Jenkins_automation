@@ -22,11 +22,9 @@ spec:
         env:
         - name: PORT
           value: "4000"
-        - name: MONGO_URI
-          valueFrom:
-            secretKeyRef:
-              name: backend-secrets
-              key: MONGO_URI
+        envFrom:
+        - secretRef:
+            name: backend-secrets
       imagePullSecrets:
       - name: ghcr-secret
 ---

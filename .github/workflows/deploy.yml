@@ -86,8 +86,17 @@ jobs:
             # Create a secret for pulling from GHCR if it's private
             sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=${{ github.actor }} --docker-password=${{ secrets.GITHUB_TOKEN }} --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
             
-            # Create a secret for the backend MongoDB connection string
-            sudo kubectl create secret generic backend-secrets --from-literal=MONGO_URI='${{ secrets.MONGO_URI }}' --dry-run=client -o yaml | sudo kubectl apply -f -
+            # Create a secret for the backend environment variables
+            sudo kubectl create secret generic backend-secrets \
+              --from-literal=MONGO_URI='${{ secrets.MONGO_URI }}' \
+              --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
+              --from-literal=FRONTEND_ORIGIN='${{ secrets.FRONTEND_ORIGIN }}' \
+              --from-literal=EMAIL_USER='${{ secrets.EMAIL_USER }}' \
+              --from-literal=EMAIL_PASS='${{ secrets.EMAIL_PASS }}' \
+              --from-literal=TWILIO_ACCOUNT_SID='${{ secrets.TWILIO_ACCOUNT_SID }}' \
+              --from-literal=TWILIO_AUTH_TOKEN='${{ secrets.TWILIO_AUTH_TOKEN }}' \
+              --from-literal=TWILIO_PHONE_NUMBER='${{ secrets.TWILIO_PHONE_NUMBER }}' \
+              --dry-run=client -o yaml | sudo kubectl apply -f -
             
             # Apply all k8s manifests using sudo to accommodate default k3s permissions
             sudo kubectl apply -f ~/contact-manager-k8s/k8s/
