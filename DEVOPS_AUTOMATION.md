@@ -1,35 +1,30 @@
-# Containerization and Jenkins Automation
+# Containerization and GitHub Actions Automation
 
-This project now includes:
-
-- Frontend Docker image (`Dockerfile` at repo root, served by Nginx)
-- Backend Docker image (`backend/Dockerfile`)
-- Full stack orchestration (`docker-compose.yml`) with MongoDB
-- Jenkins CI pipeline (`Jenkinsfile`) for build + smoke test
+This project now uses GitHub Actions and Kubernetes (K3s) for continuous integration and automated deployment.
 
 ## 1. Local Docker Compose Workflow
 
 From the project root:
 
 ```bash
-docker compose up --build -d
+docker-compose up --build -d
 ```
 
 Check containers:
 
 ```bash
-docker compose ps
+docker-compose ps
 ```
 
 Open apps:
 
-- Frontend: `http://localhost:3000`
+- Frontend: `http://localhost:-3000` or `80` (depending on local env)
 - Backend health: `http://localhost:4000/api/health`
 
 Stop and clean up:
 
 ```bash
-docker compose down -v --remove-orphans
+docker-compose down -v --remove-orphans
 ```
 
 ## 2. Environment Variables
@@ -41,162 +36,63 @@ For container runs, `docker-compose.yml` overrides:
 - `MONGO_URI=mongodb://mongo:27017/contact_manager`
 - `PORT=4000`
 
-Recommended setup:
+Recommended setup for local development is keeping local dev values in `backend/.env` while keeping secrets out of git.
 
-1. Keep local dev values in `backend/.env`.
-2. Keep secrets out of git.
-3. In Jenkins, inject secret values using Credentials + environment bindings (e.g., JWT/email/Twilio values).
+## 3. GitHub Actions Pipeline (CI/CD)
 
-## 3. Jenkins Pipeline (CI)
+The GitHub Actions workflow `.github/workflows/deploy.yml` executes on every push to the `main` branch.
 
-The `Jenkinsfile` executes:
+**Workflow Steps:**
+1. Checkout source code.
+2. Build the Frontend and Backend Docker images.
+3. Push Docker images to GitHub Container Registry (GHCR).
+4. Update Kubernetes manifest files (`k8s/frontend.yaml` and `k8s/backend.yaml`) with the new image tags.
+5. Securely copy the k8s manifests to the remote K3s EC2 instance.
+6. Apply the Kubernetes manifests and wait for the new images to roll out.
 
-1. Checkout source
-2. Verify Docker and Docker Compose availability
-3. Build Docker images
-4. Start stack via Docker Compose
-5. Run smoke tests against frontend and backend
-6. Capture logs and tear down containers
+### GitHub Prerequisites
 
-### Jenkins Prerequisites
+You must set up the following secrets in your GitHub repository (**Settings > Secrets and variables > Actions**):
 
-- Jenkins agent with Docker Engine + Docker Compose v2
-- Jenkins user can run Docker commands
-- Pipeline job pointed at this repository
+- `VITE_GOOGLE_API_KEY`: API Key needed for the frontend build process.
+- `EC2_HOST`: The public IP or DNS of the EC2 instance hosting Kubernetes/K3s.
+- `EC2_SSH_KEY`: The PEM Private Key used to SSH into the EC2 instance securely.
 
-### Creating the Pipeline Job
+Your repository should be configured so that `github.actor` has permission to write packages to `ghcr.io` for your user or organization.
 
-1. In Jenkins, create a new **Pipeline** job.
-2. Under **Pipeline Definition**, choose **Pipeline script from SCM**.
-3. Select your Git source and branch.
-4. Script path: `Jenkinsfile`.
-5. Save and run **Build Now**.
+## 4. Production Deployment (K3s)
 
-## 4. Optional: Push Images to a Registry
+The `k8s` directory contains standard Kubernetes resources that define the required cluster state:
 
-If you want CD-ready images, add another Jenkins stage after `Build Images`:
+- `mongo.yaml`: A MongoDB persistent deployment with a `PersistentVolumeClaim`.
+- `backend.yaml`: The Node.js application backend mapping port `4000`.
+- `frontend.yaml`: The NGINX reverse-proxy web frontend deployed as a `LoadBalancer` mapping port `80`.
 
-- `docker login` (with Jenkins credentials)
-- `docker tag ...`
-- `docker push ...`
+Because K3s contains a built-in Traefik load balancer, deploying a service of type `LoadBalancer` automatically exposes it without needing a complex set of NGINX Ingress rules out of the box for standard TCP port mapping. You can add an `Ingress` object if domain-based routing is needed.
 
-Then deploy those image tags in your target environment.
+### Checking Deployment Health on the Server
 
-## 5. Common Commands
-
-Build only:
+You can SSH into your server:
 
 ```bash
-docker compose build
+ssh -i your-key.pem ubuntu@your-ec2-ip
 ```
 
-See logs:
+Then check the running K3s pods:
 
 ```bash
-docker compose logs -f backend
-docker compose logs -f frontend
+kubectl get pods
 ```
 
-Recreate stack:
+Check logs for the backend:
 
 ```bash
-docker compose down -v --remove-orphans
-docker compose up --build -d
+kubectl logs deployment/backend -f
 ```
 
-## 6. GitHub Webhook Automation
+## 5. First Deployment Checklist
 
-To trigger Jenkins automatically on every push:
-
-### Jenkins Setup
-
-1. Install/enable plugins:
-	- Git plugin
-	- GitHub plugin
-	- Pipeline plugin
-2. Open your Jenkins Pipeline job and ensure the SCM points to your GitHub repository.
-3. For classic Pipeline jobs, keep this in `Jenkinsfile`:
-
-```groovy
-triggers {
-	 githubPush()
-}
-```
-
-4. In **Manage Jenkins > Configure System > GitHub**, add your GitHub server credentials if your repo is private.
-
-### GitHub Repository Webhook Setup
-
-1. Open your GitHub repo > **Settings > Webhooks > Add webhook**.
-2. Set **Payload URL** to:
-	- `http://<your-jenkins-host>/github-webhook/`
-3. Set **Content type** to `application/json`.
-4. Set a **Secret** and use the same secret in Jenkins GitHub webhook configuration.
-5. Select **Just the push event** (add pull request events if needed).
-6. Save webhook and send a test delivery.
-
-### Validation
-
-1. Push a small commit to the connected branch.
-2. Confirm webhook delivery is green in GitHub.
-3. Confirm a new Jenkins build starts automatically.
-
-If Jenkins does not trigger:
-
-- Check Jenkins is reachable from GitHub (public URL or tunnel/reverse proxy).
-- Verify webhook URL ends with `/github-webhook/`.
-- Check Jenkins system logs and webhook delivery response code.
-
-## 7. Production Deployment (Automated)
-
-This repository now includes a deployment flow that can ship to a Linux VM after CI passes.
-
-### Files Used
-
-- `docker-compose.prod.yml`: production-safe compose stack (MongoDB not publicly exposed)
-- `scripts/deploy-remote.sh`: uploads and deploys the release package over SSH
-- `Jenkinsfile` stage: `Deploy to VM` runs only on `main` branch
-
-### Jenkins Requirements for Deployment
-
-1. Install **SSH Agent Plugin**.
-2. Add Jenkins credential:
-	- Kind: `SSH Username with private key`
-	- ID: `deploy-ssh-key`
-3. Add Jenkins environment variables (job or folder level):
-	- `DEPLOY_HOST` = your VM public DNS or IP
-	- `DEPLOY_USER` = SSH user on VM (for example `ubuntu`)
-	- Optional `DEPLOY_PATH` = target path on VM (default `/opt/contact-manager`)
-
-### VM Prerequisites
-
-On the target Linux VM, install Docker + Docker Compose plugin and ensure the deploy user can run Docker commands.
-
-### Deployment Flow
-
-1. Push to `main`.
-2. Jenkins runs build + smoke test.
-3. Jenkins packages repo to `release.tgz`.
-4. Jenkins copies package to VM via SSH.
-5. VM executes:
-	- `docker compose -f docker-compose.prod.yml up -d --build --remove-orphans`
-
-### Verify Deployment
-
-1. Open your public app URL.
-2. Check backend health (from VM): `curl http://localhost:4000/api/health`.
-3. In Jenkins build logs, confirm stage `Deploy to VM` is successful.
-
-### First Deployment Checklist
-
-1. In Jenkins job configuration, set:
-	- `DEPLOY_HOST`
-	- `DEPLOY_USER`
-	- Optional `DEPLOY_PATH`
-2. Add SSH credential with ID `deploy-ssh-key`.
-3. Ensure VM firewall allows SSH and HTTP/HTTPS.
-4. Push to `main` branch to trigger CI + deploy automatically.
-5. If this is the first deployment, update generated files on VM:
-	- `.env`
-	- `backend/.env`
-	with real production secrets and URLs.
+1. Setup the necessary Action Secrets in the GitHub Repsitory (`EC2_HOST`, `EC2_SSH_KEY`, `VITE_GOOGLE_API_KEY`).
+2. Make sure the target server has `k3s` installed and running, and the SSH User has permission to run `kubectl`.
+3. If packages are to be kept private in GHCR, you must create a Kubernetes secret `ghcr-secret` with your credentials and uncomment the `imagePullSecrets` lines inside the `backend.yaml` and `frontend.yaml` files.
+4. Push code to the `main` branch to trigger an automated deployment to K3s!
