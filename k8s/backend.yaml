@@ -23,7 +23,10 @@ spec:
         - name: PORT
           value: "4000"
         - name: MONGO_URI
-          value: "MONGO_URI_PLACEHOLDER"
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: MONGO_URI
       imagePullSecrets:
       - name: ghcr-secret
 ---

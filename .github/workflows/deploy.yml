@@ -62,11 +62,10 @@ jobs:
       - name: Set lower case repository name
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
 
-      - name: Replace image tags and secrets in k8s manifests
+      - name: Replace image tags in k8s manifests
         run: |
           sed -i "s|ghcr.io/YOUR_REPO/contact-manager-frontend:latest|${{ env.REGISTRY }}/${{ env.REPO }}/contact-manager-frontend:${{ github.sha }}|g" k8s/frontend.yaml
           sed -i "s|ghcr.io/YOUR_REPO/contact-manager-backend:latest|${{ env.REGISTRY }}/${{ env.REPO }}/contact-manager-backend:${{ github.sha }}|g" k8s/backend.yaml
-          sed -i "s|MONGO_URI_PLACEHOLDER|${{ secrets.MONGO_URI }}|g" k8s/backend.yaml
 
       - name: Copy k8s manifests to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -84,9 +83,11 @@ jobs:
           username: ubuntu # Change to root, ec2-user, or debian depending on your AMI
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Create a secret for pulling from GHCR if it's private (Optional)
             # Create a secret for pulling from GHCR if it's private
             sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=${{ github.actor }} --docker-password=${{ secrets.GITHUB_TOKEN }} --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
+            
+            # Create a secret for the backend MongoDB connection string
+            sudo kubectl create secret generic backend-secrets --from-literal=MONGO_URI='${{ secrets.MONGO_URI }}' --dry-run=client -o yaml | sudo kubectl apply -f -
             
             # Apply all k8s manifests using sudo to accommodate default k3s permissions
             sudo kubectl apply -f ~/contact-manager-k8s/k8s/
