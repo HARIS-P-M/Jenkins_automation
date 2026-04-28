@@ -593,7 +593,7 @@ export default function App() {
         unreadSMSCount={unreadSMSCount}
       />
 
-      <main className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+      <main className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-40">
         {/* Page Content Header with Search */}
         <div className="py-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>

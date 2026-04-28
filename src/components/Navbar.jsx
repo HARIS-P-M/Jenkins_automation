@@ -87,7 +87,7 @@ export default function Navbar({
       </header>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-card border-t py-2 px-4 flex justify-around items-center">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border-subtle shadow-[0_-8px_30px_rgba(0,0,0,0.1)] backdrop-blur-lg bg-white/95 dark:bg-slate-900/95 py-3 px-4 flex justify-around items-center pb-safe">
         {navItems.map((item) => (
           <button
             key={item.key}
