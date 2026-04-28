@@ -14,6 +14,13 @@ export default {
           600: '#2563eb',
           700: '#1d4ed8',
         },
+        'bg-main': 'var(--bg-main)',
+        'bg-surface': 'var(--bg-surface)',
+        'bg-hover': 'var(--bg-hover)',
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-muted': 'var(--text-muted)',
+        'border-subtle': 'var(--border-subtle)',
       },
       boxShadow: {
         'nav': '0 -10px 30px rgba(0,0,0,0.08)',
