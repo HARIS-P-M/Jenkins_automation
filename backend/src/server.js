@@ -948,60 +948,73 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
       else if (formattedTo.length > 10) formattedTo = '+' + formattedTo
     }
 
-    if (!isTwilioConfigured) {
-      console.log('DEMO MODE: SMS sent:', { from: fromNumber, to: formattedTo, message });
+    // Optional: Allow forcing demo mode via env
+    const forceDemo = process.env.FORCE_DEMO_SMS === 'true' || process.env.DEMO_MODE === 'true'
 
-      // Save to database
-      const sentMsg = await SMSMessage.create({
-        ownerId: userId,
-        from: fromNumber,
-        to: formattedTo,
-        message,
-        type: 'sent',
-        timestamp: new Date()
-      })
+    if (!isTwilioConfigured || forceDemo) {
+      console.log('SMS [DEMO]:', { from: fromNumber, to: formattedTo });
 
-      return res.json({ 
-        success: true, 
-        message: 'SMS sent successfully (demo mode)',
-        id: sentMsg._id
-      })
+      try {
+        const sentMsg = await SMSMessage.create({
+          ownerId: userId,
+          from: String(fromNumber),
+          to: String(formattedTo),
+          message: String(message),
+          type: 'sent',
+          timestamp: new Date()
+        })
+
+        return res.json({ 
+          success: true, 
+          message: 'SMS logged in demo mode',
+          id: sentMsg._id
+        })
+      } catch (dbErr) {
+        console.error('SMS DB Error (Demo):', dbErr.message)
+        return res.json({ success: true, message: 'SMS sent (demo, db save failed)' })
+      }
     }
 
     // Production (Twilio)
     try {
       const twilio = await import('twilio')
-      const client = twilio.default(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+      // Twilio package usually has a default export that is the client factory
+      const TwilioClient = twilio.default || twilio
+      const client = typeof TwilioClient === 'function' ? TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) : new TwilioClient.RestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
       
       const twilioRes = await client.messages.create({
-        body: message,
-        from: TWILIO_PHONE_NUMBER.startsWith('+') ? TWILIO_PHONE_NUMBER : `+${TWILIO_PHONE_NUMBER}`,
-        to: formattedTo
+        body: String(message),
+        from: String(TWILIO_PHONE_NUMBER).startsWith('+') ? String(TWILIO_PHONE_NUMBER) : `+${TWILIO_PHONE_NUMBER}`,
+        to: String(formattedTo)
       })
 
-      const sentMsg = await SMSMessage.create({
-        ownerId: userId,
-        from: TWILIO_PHONE_NUMBER,
-        to: formattedTo,
-        message,
-        type: 'sent',
-        timestamp: new Date()
-      })
+      let msgId = null
+      try {
+        const sentMsg = await SMSMessage.create({
+          ownerId: userId,
+          from: String(TWILIO_PHONE_NUMBER),
+          to: String(formattedTo),
+          message: String(message),
+          type: 'sent',
+          timestamp: new Date()
+        })
+        msgId = sentMsg._id
+      } catch (dbErr) {
+        console.error('SMS DB Error (Twilio):', dbErr.message)
+      }
 
-      res.json({ success: true, message: 'SMS sent via Twilio', sid: twilioRes.sid, id: sentMsg._id })
+      res.json({ success: true, message: 'SMS sent via Twilio', sid: twilioRes.sid, id: msgId })
     } catch (err) {
-      console.error('Twilio Error:', err.message)
-      // Return 400 for client errors (like invalid number) instead of 502
-      const isClientError = err.code === 21608 || err.code === 21211 || err.message.includes('not a valid');
-      res.status(isClientError ? 400 : 500).json({ 
+      console.error('Twilio critical failure:', err.message)
+      res.status(400).json({ 
         error: 'Twilio delivery failed', 
         details: err.message,
-        hint: 'Ensure your Twilio Sender Number and Recipient Number are in correct +91... format.'
+        hint: 'Check your Twilio credentials and ensure both numbers are in +91... format.'
       })
     }
   } catch (e) {
-    console.error('Backend Error in send-sms:', e)
-    res.status(500).json({ error: 'Internal server error during SMS operation', details: e.message })
+    console.error('Global Error in send-sms:', e)
+    res.status(500).json({ error: 'Internal system error', details: e.message })
   }
 })
 
