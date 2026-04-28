@@ -11,10 +11,22 @@ export default function SMSSender({ recipient, recipientName, onClose }) {
 
   useEffect(() => {
     try {
-      const savedTemplates = JSON.parse(localStorage.getItem('sms_templates') || '[]')
-      setTemplates(savedTemplates)
+      const DEFAULT_TEMPLATES = [
+        { id: 1, text: "Hi {name}, I tried calling you but couldn't reach you. Please call me back when you're free. Thanks!" },
+        { id: 2, text: "Hello {name}, just a reminder about our scheduled meeting. Looking forward to speaking with you." },
+        { id: 3, text: "Hi {name}, please find my contact details saved here. Let's stay in touch!" },
+        { id: 4, text: "Greetings {name}, hope you're having a great day. Just checking in on our last discussion." }
+      ];
+      
+      const saved = localStorage.getItem('sms_templates');
+      if (saved) {
+        setTemplates(JSON.parse(saved));
+      } else {
+        setTemplates(DEFAULT_TEMPLATES);
+        localStorage.setItem('sms_templates', JSON.stringify(DEFAULT_TEMPLATES));
+      }
     } catch (e) {
-      setTemplates([])
+      setTemplates([]);
     }
   }, [])
 
