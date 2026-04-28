@@ -22,12 +22,6 @@ pipeline {
     }
 
     stages {
-        stage('Debug Parameters') {
-            steps {
-                echo "EC2_HOST: ${params.EC2_HOST}"
-                echo "MONGO_URI: ${params.MONGO_URI ? 'SET' : 'EMPTY'}"
-            }
-        }
         stage('Checkout') {
             steps {
                 checkout scm
@@ -69,30 +63,33 @@ pipeline {
                     sh 'chmod 600 ec2_key.pem'
 
                     try {
-                        sh "ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${params.EC2_HOST} 'mkdir -p ~/contact-manager-k8s'"
-                        sh "scp -o StrictHostKeyChecking=no -i ec2_key.pem -r k8s/ ${env.EC2_USER}@${params.EC2_HOST}:~/contact-manager-k8s/"
+                        withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
+                            sh "ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${params.EC2_HOST} 'mkdir -p ~/contact-manager-k8s'"
+                            sh "scp -o StrictHostKeyChecking=no -i ec2_key.pem -r k8s/ ${env.EC2_USER}@${params.EC2_HOST}:~/contact-manager-k8s/"
 
-                        sh """
-                        ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${params.EC2_HOST} "
-                            sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=haris-p-m --docker-password=\$GITHUB_TOKEN --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
-                            
-                            sudo kubectl create secret generic backend-secrets \\
-                              --from-literal=MONGO_URI='${params.MONGO_URI}' \\
-                              --from-literal=JWT_SECRET='${params.JWT_SECRET}' \\
-                              --from-literal=FRONTEND_ORIGIN='${params.FRONTEND_ORIGIN}' \\
-                              --from-literal=EMAIL_USER='${params.EMAIL_USER}' \\
-                              --from-literal=EMAIL_PASS='${params.EMAIL_PASS}' \\
-                              --from-literal=TWILIO_ACCOUNT_SID='${params.TWILIO_ACCOUNT_SID}' \\
-                              --from-literal=TWILIO_AUTH_TOKEN='${params.TWILIO_AUTH_TOKEN}' \\
-                              --from-literal=TWILIO_PHONE_NUMBER='${params.TWILIO_PHONE_NUMBER}' \\
-                              --dry-run=client -o yaml | sudo kubectl apply -f -
-                              
-                            sudo kubectl apply -f ~/contact-manager-k8s/k8s/
-                            sudo kubectl rollout status deployment/frontend --timeout=60s || true
-                            sudo kubectl rollout status deployment/backend --timeout=60s || true
-                        "
-                        """
+                            sh """
+                            ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${params.EC2_HOST} "
+                                sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=haris-p-m --docker-password='$GITHUB_TOKEN' --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
+                                
+                                sudo kubectl create secret generic backend-secrets \\
+                                  --from-literal=MONGO_URI='${params.MONGO_URI}' \\
+                                  --from-literal=JWT_SECRET='${params.JWT_SECRET}' \\
+                                  --from-literal=FRONTEND_ORIGIN='${params.FRONTEND_ORIGIN}' \\
+                                  --from-literal=EMAIL_USER='${params.EMAIL_USER}' \\
+                                  --from-literal=EMAIL_PASS='${params.EMAIL_PASS}' \\
+                                  --from-literal=TWILIO_ACCOUNT_SID='${params.TWILIO_ACCOUNT_SID}' \\
+                                  --from-literal=TWILIO_AUTH_TOKEN='${params.TWILIO_AUTH_TOKEN}' \\
+                                  --from-literal=TWILIO_PHONE_NUMBER='${params.TWILIO_PHONE_NUMBER}' \\
+                                  --dry-run=client -o yaml | sudo kubectl apply -f -
+                                  
+                                sudo kubectl apply -f ~/contact-manager-k8s/k8s/
+                                sudo kubectl rollout status deployment/frontend --timeout=60s || true
+                                sudo kubectl rollout status deployment/backend --timeout=60s || true
+                            "
+                            """
+                        }
                     } finally {
+
                         // ALWAYS delete the key file even if the build fails
                         sh 'rm -f ec2_key.pem'
                     }
