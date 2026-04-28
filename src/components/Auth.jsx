@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { setAuthToken } from '../utils/storage'
 
 const API_BASE = (import.meta.env.VITE_API_BASE || '/api')
@@ -15,11 +15,26 @@ export default function Auth({ onAuthSuccess }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [code, setCode] = useState('')
+  const [token, setToken] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+
+  // Handle URL parameters for password reset
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tokenParam = urlParams.get('token')
+    const emailParam = urlParams.get('email')
+    
+    if (tokenParam && emailParam) {
+      setMode(MODES.RESET)
+      setToken(tokenParam)
+      setEmail(emailParam)
+      // Clean up URL without reloading
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -53,21 +68,22 @@ export default function Auth({ onAuthSuccess }) {
         const data = await response.json()
         if (!response.ok) throw new Error(data.error || 'Failed to send reset code')
         
-        setMessage('Reset code sent to your email!')
-        setMode(MODES.RESET)
+        setMessage('A secure reset link has been sent to your email!')
+        // We stay in FORGOT mode until they click the link in their email
       }
       else if (mode === MODES.RESET) {
         const response = await fetch(`${API_BASE}/auth/reset-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, code, newPassword })
+          body: JSON.stringify({ email, token, newPassword })
         })
         const data = await response.json()
         if (!response.ok) throw new Error(data.error || 'Failed to reset password')
         
-        setMessage('Password reset successful! You can now login.')
+        setMessage('Password reset successful! You can now login with your new password.')
         setMode(MODES.LOGIN)
         setPassword('')
+        setToken('')
       }
     } catch (err) {
       setError(err.message)
@@ -95,7 +111,7 @@ export default function Auth({ onAuthSuccess }) {
             {mode === MODES.LOGIN && 'Welcome Back'}
             {mode === MODES.SIGNUP && 'Create Account'}
             {mode === MODES.FORGOT && 'Forgot Password'}
-            {mode === MODES.RESET && 'Set New Password'}
+            {mode === MODES.RESET && 'Secure Password Reset'}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -163,22 +179,11 @@ export default function Auth({ onAuthSuccess }) {
               {mode === MODES.RESET && (
                 <>
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Reset Code</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength="6"
-                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-center tracking-[0.5em] text-xl"
-                      placeholder="000000"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                    />
-                  </div>
-                  <div>
                     <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">New Password</label>
                     <input
                       type="password"
                       required
+                      autoFocus
                       className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
                       placeholder="••••••••"
                       value={newPassword}
@@ -197,7 +202,7 @@ export default function Auth({ onAuthSuccess }) {
               {loading && <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
               {mode === MODES.LOGIN && 'Sign In'}
               {mode === MODES.SIGNUP && 'Create Account'}
-              {mode === MODES.FORGOT && 'Send Reset Code'}
+              {mode === MODES.FORGOT && 'Request Reset Link'}
               {mode === MODES.RESET && 'Update Password'}
             </button>
 

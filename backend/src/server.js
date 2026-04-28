@@ -388,22 +388,25 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.status(404).json({ error: 'No account found with this email' })
     }
 
-    // Generate 6-digit code
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString()
-    user.resetPasswordToken = resetCode
+    // Generate secure token
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    user.resetPasswordToken = resetToken
     user.resetPasswordExpires = Date.now() + 3600000 // 1 hour
     await user.save()
+
+    // Base URL for reset link
+    const resetUrl = `${process.env.APP_URL || 'https://54.80.120.125'}/reset-password?token=${resetToken}&email=${user.email}`
 
     // Send Email
     const isDemoMode = DEMO_MODE || EMAIL_USER === 'your_email@gmail.com'
     
     if (isDemoMode) {
-      console.log(`[FORGOT PASSWORD] Reset code for ${user.email} is: ${resetCode}`)
+      console.log(`[FORGOT PASSWORD] Reset link for ${user.email} is: ${resetUrl}`)
     } else {
       await transporter.sendMail({
         from: `"Contact Manager Support" <${EMAIL_USER}>`,
         to: user.email,
-        subject: '🔐 Password Reset Verification Code',
+        subject: '🔐 Reset Your Password - Contact Manager Pro',
         html: `
           <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px;">
             <div style="background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb;">
@@ -411,20 +414,25 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                 <div style="width: 64px; height: 64px; background-color: #4f46e5; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                   <span style="font-size: 32px; color: white;">🛡️</span>
                 </div>
-                <h1 style="font-size: 24px; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.025em;">Reset Your Password</h1>
-                <p style="color: #6b7280; font-size: 16px; margin-top: 8px;">Secure verification for Contact Manager Pro</p>
+                <h1 style="font-size: 24px; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.025em;">Password Reset Request</h1>
+                <p style="color: #6b7280; font-size: 16px; margin-top: 8px;">A secure link has been generated for your account</p>
               </div>
 
-              <div style="background-color: #f3f4f6; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 32px;">
-                <p style="text-transform: uppercase; font-size: 12px; font-weight: 700; color: #4b5563; letter-spacing: 0.1em; margin-bottom: 12px;">Your Verification Code</p>
-                <div style="font-size: 48px; font-weight: 800; color: #4f46e5; letter-spacing: 0.25em; margin: 0;">${resetCode}</div>
+              <div style="text-align: center; margin-bottom: 32px;">
+                <a href="${resetUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; font-weight: 700; font-size: 16px; padding: 16px 32px; border-radius: 12px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);">
+                  Reset Password Now
+                </a>
+                <p style="color: #9ca3af; font-size: 13px; margin-top: 16px;">This link will expire in 1 hour.</p>
               </div>
 
               <div style="color: #374151; font-size: 15px; line-height: 1.6; margin-bottom: 32px;">
                 <p>Hello,</p>
-                <p>We received a request to reset your password. Use the code above to complete the process. For security reasons, this code will expire in <strong>1 hour</strong>.</p>
+                <p>We received a request to reset your password. Click the button above to set a new password. If the button doesn't work, copy and paste the link below into your browser:</p>
+                <p style="word-break: break-all; font-family: monospace; font-size: 12px; color: #4f46e5; background: #f3f4f6; padding: 10px; border-radius: 8px;">
+                  ${resetUrl}
+                </p>
                 <p style="background-color: #fff7ed; border-left: 4px solid #f97316; padding: 12px; color: #9a3412; font-size: 14px;">
-                  <strong>Important:</strong> If you did not request this reset, please ignore this email or contact support if you have concerns about your account security.
+                  <strong>Important:</strong> If you did not request this, please ignore this email. Your password will remain unchanged.
                 </p>
               </div>
 
@@ -447,14 +455,14 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 // Reset Password - Verify Code & Update
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
-    const { email, code, newPassword } = req.body
-    if (!email || !code || !newPassword) {
-      return res.status(400).json({ error: 'Email, code and new password are required' })
+    const { email, token, newPassword } = req.body
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ error: 'Email, token and new password are required' })
     }
 
     const user = await User.findOne({ 
       $or: [{ email: email }, { recoveryEmail: email }],
-      resetPasswordToken: code,
+      resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() }
     })
 
