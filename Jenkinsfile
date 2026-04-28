@@ -85,9 +85,8 @@ pipeline {
                         // Convert key to classic PEM format — Jenkins container's older libcrypto
                         // cannot load the newer OpenSSH key format (-----BEGIN OPENSSH PRIVATE KEY-----)
                         sh '''
-                            cp $SSH_KEY /tmp/ec2_deploy.pem
+                            tr -d '\r' < $SSH_KEY > /tmp/ec2_deploy.pem
                             chmod 600 /tmp/ec2_deploy.pem
-                            ssh-keygen -p -m PEM -f /tmp/ec2_deploy.pem -N "" || true
                         '''
                         sh """
                             ssh -o StrictHostKeyChecking=no -i /tmp/ec2_deploy.pem ${user}@${host} 'mkdir -p ~/contact-manager-k8s'
