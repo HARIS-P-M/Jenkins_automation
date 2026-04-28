@@ -595,8 +595,8 @@ export default function App() {
 
       <main className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-40">
         {/* Page Content Header with Search */}
-        <div className="py-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+        <div className={`py-8 flex flex-col md:flex-row md:items-center justify-between gap-4 ${(activeTab === TABS.ADD || activeTab === TABS.EDIT) ? 'max-w-2xl mx-auto w-full' : ''}`}>
+          <div className={(activeTab === TABS.ADD || activeTab === TABS.EDIT) ? 'text-center md:text-left w-full' : ''}>
             <h1 className="text-2xl font-bold text-text-primary">
               {activeTab === TABS.CONTACTS && 'My Contacts'}
               {activeTab === TABS.ADD && 'Add New Contact'}
@@ -667,13 +667,13 @@ export default function App() {
           )}
 
           {activeTab === TABS.ADD && (
-            <div className="max-w-2xl">
+            <div className="max-w-2xl mx-auto">
               <AddContact onCancel={() => setActiveTab(TABS.CONTACTS)} onSave={handleAddContact} allGroups={groups} />
             </div>
           )}
 
           {activeTab === TABS.EDIT && editingContact && (
-            <div className="max-w-2xl">
+            <div className="max-w-2xl mx-auto">
               <EditContact contact={editingContact} onCancel={() => { setEditingContact(null); setActiveTab(TABS.CONTACTS); }} onSave={handleUpdateContact} allGroups={groups} />
             </div>
           )}
