@@ -23,26 +23,18 @@ jobs:
           TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
         run: |
-          # Use a heredoc to create the JSON safely
-          cat <<EOF > payload.json
-          {
-            "EC2_HOST": "$EC2_HOST",
-            "EC2_SSH_KEY": $(echo "$EC2_SSH_KEY" | jq -Rsa .),
-            "MONGO_URI": "$MONGO_URI",
-            "JWT_SECRET": "$JWT_SECRET",
-            "FRONTEND_ORIGIN": "$FRONTEND_ORIGIN",
-            "EMAIL_USER": "$EMAIL_USER",
-            "EMAIL_PASS": "$EMAIL_PASS",
-            "TWILIO_ACCOUNT_SID": "$TWILIO_ACCOUNT_SID",
-            "TWILIO_AUTH_TOKEN": "$TWILIO_AUTH_TOKEN",
-            "TWILIO_PHONE_NUMBER": "$TWILIO_PHONE_NUMBER"
-          }
-          EOF
-          
           curl -X POST "https://smee.io/haris-jenkins-automation" \
-            -H "Content-Type: application/json" \
             --user "admin:$JENKINS_API_TOKEN" \
-            -d @payload.json
+            --data-urlencode "EC2_HOST=$EC2_HOST" \
+            --data-urlencode "EC2_SSH_KEY=$EC2_SSH_KEY" \
+            --data-urlencode "MONGO_URI=$MONGO_URI" \
+            --data-urlencode "JWT_SECRET=$JWT_SECRET" \
+            --data-urlencode "FRONTEND_ORIGIN=$FRONTEND_ORIGIN" \
+            --data-urlencode "EMAIL_USER=$EMAIL_USER" \
+            --data-urlencode "EMAIL_PASS=$EMAIL_PASS" \
+            --data-urlencode "TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID" \
+            --data-urlencode "TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN" \
+            --data-urlencode "TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER"
 
 
 
