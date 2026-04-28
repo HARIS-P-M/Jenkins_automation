@@ -940,31 +940,26 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
 
     const fromNumber = user.mobileNumber || user.email || 'System'
 
+    // Ensure 'to' number is in E.164 format (starts with +)
+    let formattedTo = to.trim()
+    if (!formattedTo.startsWith('+')) {
+      // Default to +91 if not specified and starts with 10 digits
+      if (formattedTo.length === 10) formattedTo = '+91' + formattedTo
+      else if (formattedTo.length > 10) formattedTo = '+' + formattedTo
+    }
+
     if (!isTwilioConfigured) {
-      console.log('DEMO MODE: SMS sent:', { from: fromNumber, to, message });
+      console.log('DEMO MODE: SMS sent:', { from: fromNumber, to: formattedTo, message });
 
       // Save to database
       const sentMsg = await SMSMessage.create({
         ownerId: userId,
         from: fromNumber,
-        to,
+        to: formattedTo,
         message,
         type: 'sent',
         timestamp: new Date()
       })
-
-      // Delivery to internal user if exists
-      const recipient = await User.findOne({ mobileNumber: to })
-      if (recipient) {
-        await SMSMessage.create({
-          ownerId: recipient._id,
-          from: fromNumber,
-          to,
-          message,
-          type: 'received',
-          timestamp: new Date()
-        })
-      }
 
       return res.json({ 
         success: true, 
@@ -980,14 +975,14 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
       
       const twilioRes = await client.messages.create({
         body: message,
-        from: TWILIO_PHONE_NUMBER,
-        to: to
+        from: TWILIO_PHONE_NUMBER.startsWith('+') ? TWILIO_PHONE_NUMBER : `+${TWILIO_PHONE_NUMBER}`,
+        to: formattedTo
       })
 
       const sentMsg = await SMSMessage.create({
         ownerId: userId,
         from: TWILIO_PHONE_NUMBER,
-        to,
+        to: formattedTo,
         message,
         type: 'sent',
         timestamp: new Date()
@@ -996,7 +991,13 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
       res.json({ success: true, message: 'SMS sent via Twilio', sid: twilioRes.sid, id: sentMsg._id })
     } catch (err) {
       console.error('Twilio Error:', err.message)
-      res.status(502).json({ error: 'Twilio delivery failed', details: err.message })
+      // Return 400 for client errors (like invalid number) instead of 502
+      const isClientError = err.code === 21608 || err.code === 21211 || err.message.includes('not a valid');
+      res.status(isClientError ? 400 : 500).json({ 
+        error: 'Twilio delivery failed', 
+        details: err.message,
+        hint: 'Ensure your Twilio Sender Number and Recipient Number are in correct +91... format.'
+      })
     }
   } catch (e) {
     console.error('Backend Error in send-sms:', e)
