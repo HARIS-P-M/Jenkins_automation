@@ -30,7 +30,7 @@ export default function Auth({ onAuthSuccess }) {
       if (!response.ok) throw new Error(data.error || 'Authentication failed')
       
       setAuthToken(data.token)
-      onAuthSuccess(data.user)
+      onAuthSuccess(data)
     } catch (err) {
       setError(err.message)
     } finally {
