@@ -385,8 +385,10 @@ app.get('/api/user/profile', authMiddleware, async (req, res) => {
       email: user.email,
       name: user.name,
       mobileNumber: user.mobileNumber,
+      recoveryEmail: user.recoveryEmail,
       twoFactorEnabled: user.twoFactorEnabled
     })
+
   } catch (e) {
     res.status(400).json({ error: e.message })
   }

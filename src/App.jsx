@@ -96,10 +96,14 @@ export default function App() {
   }
   
   function handleUpdateUser(updatedUser) {
-    // Update user in localStorage and state
     setCurrentUser(updatedUser)
     setCurrentUserState(updatedUser)
   }
+
+  useEffect(() => {
+    window.onUserUpdate = handleUpdateUser;
+    return () => { window.onUserUpdate = undefined; };
+  }, []);
   
   async function handleImportContacts(importedContacts) {
     try {
@@ -590,155 +594,91 @@ export default function App() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-black text-gray-900 dark:text-white">
-      {/* Main search bar */}
-      <div className="fixed top-[48px] left-0 right-0 z-40 bg-white/90 dark:bg-black/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/10">
-        <div className="mx-auto px-3 md:px-4 py-2">
-          <div className="pr-8 sm:pr-10 md:pr-12 lg:pr-16">
-            <div className="relative">
-              <label className="w-full flex items-center gap-2 bg-white dark:bg-[#1b1b1b] rounded-2xl border border-gray-300 dark:border-white/10 px-3 py-1.5">
-                <svg width="20" height="20" viewBox="0 0 24 24" className="text-gray-600 dark:text-gray-400">
-                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none"/>
-                  <path d="M20 20l-3.2-3.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                </svg>
-                <input
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    // Clear advanced search when using regular search
-                    if (advancedSearchParams) clearAdvancedSearch();
-                  }}
-                  placeholder={`${contacts.length} contacts`}
-                  className="flex-1 bg-transparent outline-none text-[15px] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white"
-                />
-                {query && (
-                  <button onClick={() => setQuery('')} className="text-gray-600 dark:text-gray-500 px-1" aria-label="Clear">
-                    ✕
-                  </button>
-                )}
-                <button 
-                  onClick={() => setShowAdvancedSearch(true)}
-                  className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  aria-label="Advanced Search"
-                  title="Advanced Search"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 4h18M3 12h18M3 20h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <path d="M18 7l.01.01M18 15l.01.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                    <path d="M6 15l.01.01M6 7l.01.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </label>
-              
-              {advancedSearchParams && (
-                <div className="mt-2 py-1.5 px-3 bg-[#1b1b1b] border border-emerald-500/30 rounded-lg flex items-center justify-between text-xs">
-                  <span className="text-emerald-400">
-                    Advanced search applied
-                  </span>
-                  <button 
-                    onClick={clearAdvancedSearch}
-                    className="text-gray-400 hover:text-white ml-2"
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Optional: dial suggestion if query contains a phone */}
-          {(() => {
-            const digits = (query || '').replace(/[^0-9+]/g, '')
-            if (digits.length >= 3) {
-              return (
-                <button
-                  onClick={() => handleDial(null, digits)}
-                  className="w-full text-left text-emerald-400 text-sm"
-                >
-                  Call {formatPhone(digits)}
-                </button>
-              )
-            }
-            return null
-          })()}
-        </div>
-      </div>
-
-      {/* Add top padding so content is not hidden behind fixed header */}
-      <main className="flex-1 overflow-y-auto pb-28 pt-[65px] safe-area-bottom">
-        {activeTab === TABS.CONTACTS && (
-          <div>
-            <ContactsList
-              contacts={filteredContacts}
-              totalCount={contacts.length}
-              query={query}
-              onQueryChange={setQuery}
-              onEdit={handleEditContact}
-              onDelete={requestDelete}
-              onDial={handleDial}
-              onEmail={handleEmail}
-              onSMS={handleSMS}
-              onToggleFavorite={toggleFavorite}
-              groups={groups}
-              selectedGroup={selectedGroup}
-              onSelectGroup={handleSelectGroup}
-              onCreateGroup={handleCreateGroup}
-              onDeleteGroup={handleDeleteGroup}
-              onEditGroup={handleUpdateGroup}
+    <div className="h-full flex flex-col relative overflow-hidden">
+      {/* Search Bar - Floating Glassmorphic */}
+      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[90] w-[90%] max-w-2xl">
+        <div className="glass-card rounded-[1.5rem] p-1.5 flex items-center gap-2 shadow-2xl border-white/5 pr-4">
+          <div className="flex-1 relative flex items-center ml-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" className="text-violet-400 absolute left-3">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.5" fill="none"/>
+              <path d="M20 20l-3.2-3.2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (advancedSearchParams) clearAdvancedSearch();
+              }}
+              placeholder={`Search ${contacts.length} contacts...`}
+              className="w-full bg-white/5 border-none rounded-xl pl-10 pr-4 py-2.5 outline-none text-sm font-medium placeholder:text-text-muted focus:bg-white/10 transition-all"
             />
           </div>
+          
+          <button 
+            onClick={() => setShowAdvancedSearch(true)}
+            className={`p-2.5 rounded-xl transition-all ${advancedSearchParams ? 'bg-violet-500/20 text-violet-400' : 'text-text-muted hover:text-white hover:bg-white/5'}`}
+            title="Advanced Search"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+          </button>
+        </div>
+        
+        {advancedSearchParams && (
+          <div className="mt-3 mx-4 px-4 py-2 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-violet-400 fade-in">
+            <span>Advanced Search Active</span>
+            <button onClick={clearAdvancedSearch} className="hover:text-white transition-colors">Clear</button>
+          </div>
+        )}
+      </div>
+
+      <main className="flex-1 overflow-y-auto safe-area-bottom">
+        {activeTab === TABS.CONTACTS && (
+          <ContactsList
+            contacts={filteredContacts}
+            query={query}
+            onEdit={handleEditContact}
+            onDelete={requestDelete}
+            onDial={handleDial}
+            onEmail={handleEmail}
+            onSMS={handleSMS}
+            onToggleFavorite={toggleFavorite}
+            groups={groups}
+            selectedGroup={selectedGroup}
+            onSelectGroup={handleSelectGroup}
+            onCreateGroup={handleCreateGroup}
+            onDeleteGroup={handleDeleteGroup}
+            onEditGroup={handleUpdateGroup}
+          />
         )}
 
         {activeTab === TABS.ADD && (
-          <AddContact 
-            onCancel={() => setActiveTab(TABS.CONTACTS)} 
-            onSave={handleAddContact} 
-            allGroups={groups}
-          />
+          <div className="pt-24 px-4 pb-32 max-w-2xl mx-auto">
+            <AddContact onCancel={() => setActiveTab(TABS.CONTACTS)} onSave={handleAddContact} allGroups={groups} />
+          </div>
         )}
 
         {activeTab === TABS.EDIT && editingContact && (
-          <EditContact
-            contact={editingContact}
-            onCancel={() => {
-              setEditingContact(null)
-              setActiveTab(TABS.CONTACTS)
-            }}
-            onSave={handleUpdateContact}
-            allGroups={groups}
-          />
+          <div className="pt-24 px-4 pb-32 max-w-2xl mx-auto">
+            <EditContact contact={editingContact} onCancel={() => { setEditingContact(null); setActiveTab(TABS.CONTACTS); }} onSave={handleUpdateContact} allGroups={groups} />
+          </div>
         )}
 
         {activeTab === TABS.HISTORY && (
-          <CallHistory
-            callHistory={callHistory}
-            contacts={contacts}
-            onDial={handleDial}
-            onOpenDetails={openEditFromDetails}
-            onToggleFavorite={toggleFavorite}
-          />
+          <div className="pt-24">
+            <CallHistory callHistory={callHistory} contacts={contacts} onDial={handleDial} onOpenDetails={openEditFromDetails} onToggleFavorite={toggleFavorite} />
+          </div>
         )}
         
         {activeTab === TABS.EMAIL_INBOX && (
-          <EmailInbox
-            onClose={() => setActiveTab(TABS.CONTACTS)}
-            onReply={(to) => {
-              setEmailRecipient(to)
-              setShowEmailDialog(true)
-            }}
-            onMessageRead={fetchUnreadCounts}
-          />
+          <div className="pt-24">
+            <EmailInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(to) => { setEmailRecipient(to); setShowEmailDialog(true); }} onMessageRead={fetchUnreadCounts} />
+          </div>
         )}
         
         {activeTab === TABS.SMS_INBOX && (
-          <SMSInbox
-            onClose={() => setActiveTab(TABS.CONTACTS)}
-            onReply={(phone, name) => {
-              setSMSRecipient({ phone, name })
-              setShowSMSDialog(true)
-            }}
-            onMessageRead={fetchUnreadCounts}
-          />
+          <div className="pt-24">
+            <SMSInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(phone, name) => { setSMSRecipient({ phone, name }); setShowSMSDialog(true); }} onMessageRead={fetchUnreadCounts} />
+          </div>
         )}
       </main>
 
@@ -748,96 +688,20 @@ export default function App() {
         tabs={TABS}
         currentUser={currentUser}
         onLogout={handleLogout}
-        onShowUserSettings={() => setShowUserSettings(true)}
-        onShowBirthdayReminders={() => setShowBirthdayReminders(true)}
-        onShowContactAnalytics={() => setShowContactAnalytics(true)}
         unreadEmailCount={unreadEmailCount}
         unreadSMSCount={unreadSMSCount}
-        onShowImportExport={() => setShowImportExport(true)}
       />
 
-      {activeTab !== TABS.ADD && activeTab !== TABS.HISTORY && (
-        <FAB ariaLabel="Add contact" onClick={() => setActiveTab(TABS.ADD)} />
-      )}
-
-      <ConfirmDialog
-        open={!!pendingDelete}
-        title="Delete contact?"
-        description="This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-      />
-
-      <DialerDialog
-        open={!!pendingDial}
-        contact={pendingDial}
-        onClose={() => setPendingDial(null)}
-        onDial={(phone) => {
-          setPendingDial(null)
-          handleDial(pendingDial, phone)
-        }}
-      />
+      <ConfirmDialog open={!!pendingDelete} title="Delete Contact" description={`Are you sure you want to delete ${pendingDelete?.name}? This action is permanent.`} confirmText="Delete" cancelText="Cancel" onConfirm={confirmDelete} onCancel={cancelDelete} />
+      <DialerDialog open={!!pendingDial} contact={pendingDial} onClose={() => setPendingDial(null)} onDial={(phone) => { setPendingDial(null); handleDial(pendingDial, phone); }} />
+      <ImportExportDialog open={showImportExport} onClose={() => setShowImportExport(false)} onImport={handleImportContacts} onExport={() => {}} contacts={contacts} />
+      <CreateGroupDialog open={showCreateGroup} onClose={() => setShowCreateGroup(false)} onCreateGroup={handleCreateGroup} />
+      <BirthdayRemindersDialog open={showBirthdayReminders} onClose={() => setShowBirthdayReminders(false)} contacts={contacts} onUpdateContact={handleUpdateContact} />
+      <ContactAnalytics open={showContactAnalytics} onClose={() => setShowContactAnalytics(false)} contacts={contacts} callHistory={callHistory} />
+      <AdvancedSearchDialog open={showAdvancedSearch} onClose={() => setShowAdvancedSearch(false)} onSearch={handleAdvancedSearch} groups={groups} />
       
-      <ImportExportDialog
-        open={showImportExport}
-        onClose={() => setShowImportExport(false)}
-        onImport={handleImportContacts}
-        onExport={() => {}}
-        contacts={contacts}
-      />
-      
-      <CreateGroupDialog
-        open={showCreateGroup}
-        onClose={() => setShowCreateGroup(false)}
-        onCreateGroup={handleCreateGroup}
-      />
-      
-      <BirthdayRemindersDialog
-        open={showBirthdayReminders}
-        onClose={() => setShowBirthdayReminders(false)}
-        contacts={contacts}
-        onUpdateContact={handleUpdateContact}
-      />
-      
-      {showUserSettings && (
-        <UserSettings 
-          user={currentUser}
-          onUpdateUser={handleUpdateUser}
-          onClose={() => setShowUserSettings(false)}
-        />
-      )}
-      
-      {showContactAnalytics && (
-        <ContactAnalytics
-          contacts={contacts}
-          groups={groups}
-          onClose={() => setShowContactAnalytics(false)}
-        />
-      )}
-      
-      <AdvancedSearchDialog
-        open={showAdvancedSearch}
-        onClose={() => setShowAdvancedSearch(false)}
-        onSearch={handleAdvancedSearch}
-        groups={groups}
-      />
-      
-      {showEmailDialog && (
-        <EmailSender
-          recipient={emailRecipient}
-          onClose={() => setShowEmailDialog(false)}
-        />
-      )}
-      
-      {showSMSDialog && (
-        <SMSSender
-          recipient={smsRecipient.phone}
-          recipientName={smsRecipient.name}
-          onClose={() => setShowSMSDialog(false)}
-        />
-      )}
+      {showEmailDialog && <EmailSender open={showEmailDialog} onClose={() => setShowEmailDialog(false)} initialRecipient={emailRecipient} />}
+      {showSMSDialog && <SMSSender open={showSMSDialog} onClose={() => setShowSMSDialog(false)} initialPhone={smsRecipient.phone} initialName={smsRecipient.name} />}
     </div>
   )
-}
+}
