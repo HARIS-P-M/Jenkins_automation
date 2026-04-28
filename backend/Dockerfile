@@ -6,7 +6,6 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
-COPY .env ./.env
 
 EXPOSE 4000
 CMD ["npm", "start"]
