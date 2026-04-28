@@ -189,7 +189,13 @@ export default function UserProfileDialog({ open, onClose }) {
           )}
         </div>
       </div>
-      {show2FA && <TwoFactorAuth onClose={() => setShow2FA(false)} onVerify={handle2FAUpdate} />}
+      {show2FA && (
+        <TwoFactorAuth 
+          userEmail={user?.email}
+          onClose={() => setShow2FA(false)} 
+          onVerify={handle2FAUpdate} 
+        />
+      )}
     </div>
   )
 }

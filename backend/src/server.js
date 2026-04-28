@@ -168,6 +168,20 @@ function signToken(payload) {
   return jwt.sign(payload, secret, { expiresIn: '7d' })
 }
 
+function base32Encode(buffer) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let binary = '';
+  for (let i = 0; i < buffer.length; i++) {
+    binary += buffer[i].toString(2).padStart(8, '0');
+  }
+  let base32 = '';
+  for (let i = 0; i < binary.length; i += 5) {
+    const chunk = binary.substring(i, i + 5).padEnd(5, '0');
+    base32 += alphabet[parseInt(chunk, 2)];
+  }
+  return base32;
+}
+
 function verifyToken(token) {
   const secret = process.env.JWT_SECRET || 'dev_secret_change_me'
   return jwt.verify(token, secret)
@@ -387,11 +401,11 @@ app.post('/api/auth/setup-2fa', authMiddleware, async (req, res) => {
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
 
-    // Generate a random secret for app-based 2FA
+    // Generate a random secret for app-based 2FA (MUST be Base32 for Google Authenticator)
     let secret = null
     if (method === 'app') {
-      // In a production app, use a proper TOTP library
-      secret = crypto.randomBytes(20).toString('hex').toUpperCase()
+      const bytes = crypto.randomBytes(20)
+      secret = base32Encode(bytes)
     }
 
     user.twoFactorMethod = method

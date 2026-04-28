@@ -5,7 +5,7 @@ import { getAuthToken } from '../utils/storage';
 const API_BASE = (import.meta.env.VITE_API_BASE || '/api');
 
 
-const TwoFactorAuth = ({ onClose, onVerify }) => {
+const TwoFactorAuth = ({ userEmail, onClose, onVerify }) => {
   const [step, setStep] = useState('setup'); // setup, verify
   const [method, setMethod] = useState(''); // email, app
   const [code, setCode] = useState('');
@@ -166,7 +166,10 @@ const TwoFactorAuth = ({ onClose, onVerify }) => {
           </p>
           <div className="bg-slate-100 dark:bg-white p-4 rounded-lg mb-4 flex flex-col items-center text-center">
             <div className="bg-white p-2 rounded-lg mb-4 inline-block border border-slate-200">
-              <QRCodeCanvas value={`otpauth://totp/ContactManager?secret=${secret}&issuer=ContactManager`} size={150} />
+              <QRCodeCanvas 
+                value={`otpauth://totp/ContactManager:${userEmail || 'User'}?secret=${secret.replace(/-/g, '')}&issuer=ContactManager`} 
+                size={150} 
+              />
             </div>
             <div className="text-slate-800 dark:text-gray-800 font-mono text-sm tracking-widest">{secret}</div>
           </div>
