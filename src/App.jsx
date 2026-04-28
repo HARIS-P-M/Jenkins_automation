@@ -589,12 +589,12 @@ export default function App() {
   // If not authenticated, show Auth screen
   if (!isAuthed) {
     return (
-      <Auth onSuccess={handleAuthSuccess} />
+      <Auth onAuthSuccess={handleAuthSuccess} />
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-bg-main transition-colors duration-200">
       <Navbar
         active={activeTab}
         onChange={setActiveTab}

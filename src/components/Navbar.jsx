@@ -35,7 +35,7 @@ export default function Navbar({
               <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
                 <ContactsIcon />
               </div>
-              <span className="text-xl font-bold tracking-tight text-text-primary">Contact<span className="text-indigo-600">Manager</span></span>
+              <span className="text-xl font-bold tracking-tight text-text-primary">Contact <span className="text-indigo-600">Manager</span></span>
             </div>
 
             {/* Desktop Nav */}
