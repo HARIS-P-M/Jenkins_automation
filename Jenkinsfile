@@ -63,6 +63,7 @@ pipeline {
         stage('Deploy to EC2 K3s') {
             steps {
                 script {
+                    echo "DEBUG: EC2_HOST parameter is: '${params.EC2_HOST}'"
                     // Create a temporary SSH key file from the parameter
                     writeFile file: 'ec2_key.pem', text: params.EC2_SSH_KEY
                     sh 'chmod 600 ec2_key.pem'
