@@ -19,7 +19,6 @@ pipeline {
         REPO = "haris-p-m/jenkins_automation" 
         TAG = "${env.BUILD_NUMBER}"
         EC2_USER = "ubuntu"
-        EC2_HOST = "98.91.249.246"
     }
 
     options {
@@ -71,11 +70,11 @@ pipeline {
 
                     try {
                         withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
-                            sh "ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${env.EC2_HOST} 'mkdir -p ~/contact-manager-k8s'"
-                            sh "scp -o StrictHostKeyChecking=no -i ec2_key.pem -r k8s/ ${env.EC2_USER}@${env.EC2_HOST}:~/contact-manager-k8s/"
+                            sh "ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${params.EC2_HOST} 'mkdir -p ~/contact-manager-k8s'"
+                            sh "scp -o StrictHostKeyChecking=no -i ec2_key.pem -r k8s/ ${env.EC2_USER}@${params.EC2_HOST}:~/contact-manager-k8s/"
 
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${env.EC2_HOST} "
+                            ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${params.EC2_HOST} "
                                 sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=haris-p-m --docker-password='$GITHUB_TOKEN' --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
                                 
                                 sudo kubectl create secret generic backend-secrets \\
