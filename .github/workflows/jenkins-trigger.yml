@@ -10,9 +10,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Build Trigger to Jenkins
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
+          JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
         run: |
-          curl -X POST "https://smee.io/haris-jenkins-automation?EC2_HOST=${{ secrets.EC2_HOST }}&MONGO_URI=${{ secrets.MONGO_URI }}&JWT_SECRET=${{ secrets.JWT_SECRET }}&FRONTEND_ORIGIN=${{ secrets.FRONTEND_ORIGIN }}&EMAIL_USER=${{ secrets.EMAIL_USER }}&EMAIL_PASS=${{ secrets.EMAIL_PASS }}&TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}&TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}&TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}" \
-            --user "admin:${{ secrets.JENKINS_API_TOKEN }}" \
-            --data-urlencode "EC2_SSH_KEY=${{ secrets.EC2_SSH_KEY }}"
+          # Use a heredoc to create the JSON safely
+          cat <<EOF > payload.json
+          {
+            "EC2_HOST": "$EC2_HOST",
+            "EC2_SSH_KEY": $(echo "$EC2_SSH_KEY" | jq -Rsa .),
+            "MONGO_URI": "$MONGO_URI",
+            "JWT_SECRET": "$JWT_SECRET",
+            "FRONTEND_ORIGIN": "$FRONTEND_ORIGIN",
+            "EMAIL_USER": "$EMAIL_USER",
+            "EMAIL_PASS": "$EMAIL_PASS",
+            "TWILIO_ACCOUNT_SID": "$TWILIO_ACCOUNT_SID",
+            "TWILIO_AUTH_TOKEN": "$TWILIO_AUTH_TOKEN",
+            "TWILIO_PHONE_NUMBER": "$TWILIO_PHONE_NUMBER"
+          }
+          EOF
+          
+          curl -X POST "https://smee.io/haris-jenkins-automation" \
+            -H "Content-Type: application/json" \
+            --user "admin:$JENKINS_API_TOKEN" \
+            -d @payload.json
+
+
 
 
