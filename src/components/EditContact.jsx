@@ -9,7 +9,7 @@ export default function EditContact({ contact, onCancel, onSave, allGroups = [] 
       <ContactForm
         initial={contact}
         onCancel={onCancel}
-        onSubmit={onSave}
+        onSubmit={(data) => onSave({ id: contact.id, ...data })}
         submitLabel="Update Contact"
         allGroups={allGroups}
       />

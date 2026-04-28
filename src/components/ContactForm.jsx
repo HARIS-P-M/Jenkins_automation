@@ -51,7 +51,7 @@ export default function ContactForm({
   return (
     <form id={formId} onSubmit={handleSubmit} className="space-y-6">
       <div className="surface-card rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center justify-center w-full mb-8 text-center">
            <AvatarPicker value={avatar} onChange={setAvatar} />
            <p className="text-xs text-text-muted mt-2 uppercase font-bold tracking-widest">Profile Picture</p>
         </div>

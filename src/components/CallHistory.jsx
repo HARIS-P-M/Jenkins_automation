@@ -59,7 +59,7 @@ export default function CallHistory({ callHistory, contacts = [], onDial, onOpen
       {!detailsFor && (
         <>
           <header className="px-4 pt-6">
-            <h1 className="text-xl font-semibold">All calls</h1>
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">All calls</h1>
           </header>
 
           <ul className="mt-3 max-w-md mx-auto">
@@ -69,13 +69,13 @@ export default function CallHistory({ callHistory, contacts = [], onDial, onOpen
               const name = contact?.name || h.name || h.phone
               const avatar = contact?.avatar
               const number = h.phone || contact?.phones?.[0] || ''
-              const nameClass = isMissed ? 'text-rose-500' : 'text-white'
+              const nameClass = isMissed ? 'text-rose-500' : 'text-slate-900 dark:text-white'
 
               return (
-                <li key={h.id} className={`px-4 py-4 ${idx !== callHistory.length - 1 ? 'border-b border-white/10' : ''}`}>
+                <li key={h.id} className={`px-4 py-4 ${idx !== callHistory.length - 1 ? 'border-b border-slate-200 dark:border-white/10' : ''}`}>
                   <div className="flex items-center gap-3">
                     <ArrowIcon type={h.type} />
-                    <div className="h-9 w-9 rounded-full overflow-hidden bg-neutral-700/60 grid place-items-center text-gray-300">
+                    <div className="h-9 w-9 rounded-full overflow-hidden bg-slate-200 dark:bg-neutral-700/60 grid place-items-center text-slate-500 dark:text-gray-300">
                       {avatar ? (
                         <img src={avatar} alt={name} className="w-full h-full object-cover" />
                       ) : (
@@ -89,13 +89,13 @@ export default function CallHistory({ callHistory, contacts = [], onDial, onOpen
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className={`truncate text-[18px] ${nameClass}`}>{name}</div>
-                          {number && <div className="text-sm text-gray-400 truncate">{number}</div>}
+                          {number && <div className="text-sm text-slate-500 dark:text-gray-400 truncate">{number}</div>}
                         </div>
-                        <div className="shrink-0 text-gray-400 text-[15px]">{formatClock(h.timestamp)}</div>
+                        <div className="shrink-0 text-slate-500 dark:text-gray-400 text-[15px]">{formatClock(h.timestamp)}</div>
                       </div>
                     </div>
                     <button
-                      className="shrink-0 h-9 w-9 rounded-full bg-[#1f1f1f] border border-white/10 grid place-items-center text-gray-300"
+                      className="shrink-0 h-9 w-9 rounded-full bg-slate-100 dark:bg-[#1f1f1f] border border-slate-200 dark:border-white/10 grid place-items-center text-slate-600 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-[#2a2a2a] transition-colors"
                       aria-label="Details"
                       onClick={() => setDetailsFor({ contact, fallbackName: h.name, fallbackPhone: number })}
                     >
@@ -109,7 +109,7 @@ export default function CallHistory({ callHistory, contacts = [], onDial, onOpen
             })}
 
             {callHistory.length === 0 && (
-              <div className="text-center text-gray-500 py-10">No calls yet.</div>
+              <div className="text-center text-slate-500 dark:text-gray-500 py-10">No calls yet.</div>
             )}
           </ul>
 

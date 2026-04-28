@@ -138,6 +138,7 @@ const UserSchema = new mongoose.Schema({
   twoFactorSecret: { type: String, default: null },
   resetPasswordToken: { type: String, default: null },
   resetPasswordExpires: { type: Date, default: null },
+  avatar: { type: String, default: '' },
 }, { timestamps: true })
 
 UserSchema.set('toJSON', {
@@ -498,7 +499,8 @@ app.get('/api/user/profile', authMiddleware, async (req, res) => {
       name: user.name,
       mobileNumber: user.mobileNumber,
       recoveryEmail: user.recoveryEmail,
-      twoFactorEnabled: user.twoFactorEnabled
+      twoFactorEnabled: user.twoFactorEnabled,
+      avatar: user.avatar
     })
 
   } catch (e) {
@@ -510,7 +512,7 @@ app.get('/api/user/profile', authMiddleware, async (req, res) => {
 app.put('/api/user/profile', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.user
-    const { name, mobileNumber, recoveryEmail } = req.body
+    const { name, mobileNumber, recoveryEmail, avatar } = req.body
 
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
@@ -519,6 +521,7 @@ app.put('/api/user/profile', authMiddleware, async (req, res) => {
     if (name !== undefined) user.name = name
     if (mobileNumber !== undefined) user.mobileNumber = mobileNumber
     if (recoveryEmail !== undefined) user.recoveryEmail = recoveryEmail
+    if (avatar !== undefined) user.avatar = avatar
 
     await user.save()
 
@@ -529,7 +532,8 @@ app.put('/api/user/profile', authMiddleware, async (req, res) => {
       name: user.name,
       mobileNumber: user.mobileNumber,
       recoveryEmail: user.recoveryEmail,
-      twoFactorEnabled: user.twoFactorEnabled
+      twoFactorEnabled: user.twoFactorEnabled,
+      avatar: user.avatar
     })
   } catch (e) {
     res.status(400).json({ error: e.message })

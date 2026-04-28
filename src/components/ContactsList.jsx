@@ -75,8 +75,8 @@ export default function ContactsList({
   return (
     <div className="space-y-6">
       {/* Groups & Filters */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1 overflow-x-auto no-scrollbar py-1">
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar py-1">
           <ContactGroups
             groups={groups || []}
             selectedGroup={selectedGroup}
@@ -88,7 +88,7 @@ export default function ContactsList({
         </div>
         <button
           onClick={() => setShowFilterDialog(true)}
-          className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${activeFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-900/20 dark:border-indigo-800' : 'bg-surface-card border-border-subtle text-text-secondary hover:bg-bg-hover'}`}
+          className={`shrink-0 mb-4 flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${activeFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-900/20 dark:border-indigo-800' : 'bg-surface-card border-border-subtle text-text-secondary hover:bg-bg-hover'}`}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
           <span className="hidden sm:inline">Filters</span>

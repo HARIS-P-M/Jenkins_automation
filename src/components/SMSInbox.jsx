@@ -103,13 +103,13 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
   const unreadCount = messages.filter(m => !m.read).length
 
   return (
-    <div className="h-full bg-[#0b0b0b] flex flex-col">
+    <div className="h-full bg-white dark:bg-[#0b0b0b] flex flex-col transition-colors">
       {/* Header */}
-      <div className="bg-[#0e0e0e] border-b border-white/10 p-4">
+      <div className="bg-slate-50 dark:bg-[#0e0e0e] border-b border-slate-200 dark:border-white/10 p-4 transition-colors">
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={onClose}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition"
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white transition"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -118,7 +118,7 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
           </button>
         </div>
         
-        <h1 className="text-2xl font-bold text-white mb-4">💬 SMS</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 transition-colors">💬 SMS</h1>
         
         {/* Tabs */}
         <div className="flex gap-2">
@@ -127,7 +127,7 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
             className={`px-4 py-2 rounded-lg font-medium transition ${
               activeTab === 'inbox'
                 ? 'bg-purple-600 text-white'
-                : 'bg-[#1a1a1a] text-gray-400 hover:text-white'
+                : 'bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#1a1a1a] dark:text-gray-400 dark:hover:text-white'
             }`}
           >
             📥 Inbox {unreadCount > 0 && activeTab === 'inbox' && (
@@ -141,7 +141,7 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
             className={`px-4 py-2 rounded-lg font-medium transition ${
               activeTab === 'sent'
                 ? 'bg-purple-600 text-white'
-                : 'bg-[#1a1a1a] text-gray-400 hover:text-white'
+                : 'bg-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#1a1a1a] dark:text-gray-400 dark:hover:text-white'
             }`}
           >
             📤 Sent
@@ -152,17 +152,17 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
       {/* Content */}
       <div className="flex-1 overflow-hidden flex">
         {/* Message List */}
-        <div className="w-1/3 border-r border-white/10 overflow-y-auto">
+        <div className="w-1/3 border-r border-slate-200 dark:border-white/10 overflow-y-auto">
           {loading && (
-            <div className="p-4 text-center text-gray-400">Loading...</div>
+            <div className="p-4 text-center text-slate-500 dark:text-gray-400">Loading...</div>
           )}
           
           {error && (
-            <div className="p-4 text-red-400 text-sm">{error}</div>
+            <div className="p-4 text-red-500 dark:text-red-400 text-sm">{error}</div>
           )}
           
           {!loading && !error && messages.length === 0 && (
-            <div className="p-4 text-center text-gray-400">
+            <div className="p-4 text-center text-slate-500 dark:text-gray-400">
               No {activeTab === 'inbox' ? 'received' : 'sent'} SMS messages
             </div>
           )}
@@ -171,22 +171,22 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
             <button
               key={message._id}
               onClick={() => handleSelectMessage(message)}
-              className={`w-full text-left p-4 border-b border-white/10 hover:bg-[#1a1a1a] transition ${
-                selectedMessage?._id === message._id ? 'bg-[#1a1a1a]' : ''
-              } ${!message.read ? 'bg-purple-900/20' : ''}`}
+              className={`w-full text-left p-4 border-b border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-[#1a1a1a] transition ${
+                selectedMessage?._id === message._id ? 'bg-slate-100 dark:bg-[#1a1a1a]' : ''
+              } ${!message.read ? 'bg-purple-50 dark:bg-purple-900/20' : ''}`}
             >
               <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="font-medium text-white truncate">
+                <div className="font-medium text-slate-900 dark:text-white truncate">
                   {activeTab === 'inbox' ? message.from : message.to}
                 </div>
                 {!message.read && (
                   <span className="flex-shrink-0 h-2 w-2 rounded-full bg-purple-500"></span>
                 )}
               </div>
-              <div className="text-sm text-gray-400 truncate mb-1">
+              <div className="text-sm text-slate-600 dark:text-gray-400 truncate mb-1">
                 {message.message.substring(0, 50)}...
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-slate-500 dark:text-gray-500">
                 {new Date(message.timestamp).toLocaleDateString()} {new Date(message.timestamp).toLocaleTimeString()}
               </div>
             </button>
@@ -198,7 +198,7 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
           {selectedMessage ? (
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white transition-colors">
                   SMS Message
                 </h2>
                 <div className="flex gap-2">
@@ -222,24 +222,24 @@ export default function SMSInbox({ onClose, onReply, onMessageRead }) {
                 </div>
               </div>
               
-              <div className="mb-4 pb-4 border-b border-white/10">
-                <div className="text-sm text-gray-400 mb-1">
-                  <span className="font-medium">From:</span> {selectedMessage.from || 'Unknown'}
+              <div className="mb-4 pb-4 border-b border-slate-200 dark:border-white/10">
+                <div className="text-sm text-slate-600 dark:text-gray-400 mb-1">
+                  <span className="font-medium text-slate-800 dark:text-gray-300">From:</span> {selectedMessage.from || 'Unknown'}
                 </div>
-                <div className="text-sm text-gray-400 mb-1">
-                  <span className="font-medium">To:</span> {selectedMessage.to || 'Unknown'}
+                <div className="text-sm text-slate-600 dark:text-gray-400 mb-1">
+                  <span className="font-medium text-slate-800 dark:text-gray-300">To:</span> {selectedMessage.to || 'Unknown'}
                 </div>
-                <div className="text-sm text-gray-400">
-                  <span className="font-medium">Date:</span> {selectedMessage.timestamp ? new Date(selectedMessage.timestamp).toLocaleString() : 'Unknown'}
+                <div className="text-sm text-slate-600 dark:text-gray-400">
+                  <span className="font-medium text-slate-800 dark:text-gray-300">Date:</span> {selectedMessage.timestamp ? new Date(selectedMessage.timestamp).toLocaleString() : 'Unknown'}
                 </div>
               </div>
               
-              <div className="text-gray-200 whitespace-pre-wrap">
+              <div className="text-slate-800 dark:text-gray-200 whitespace-pre-wrap">
                 {selectedMessage.message || 'No message content'}
               </div>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-400">
+            <div className="h-full flex items-center justify-center text-slate-500 dark:text-gray-400">
               Select a message to read
             </div>
           )}
