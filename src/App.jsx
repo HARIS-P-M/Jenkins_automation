@@ -549,23 +549,8 @@ export default function App() {
       const telUrl = `tel:${phone}`
       console.log('Initiating call to:', phone, 'via URL:', telUrl)
       
-      // Create a temporary link and click it
-      const link = document.createElement('a')
-      link.href = telUrl
-      link.style.display = 'none'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      // Alternative method: try window.open
-      setTimeout(() => {
-        try {
-          window.open(telUrl, '_self')
-        } catch (e) {
-          console.log('window.open failed, trying location.href')
-          window.location.href = telUrl
-        }
-      }, 100)
+      // Directly open without timeout to maintain user gesture
+      window.location.href = telUrl
       
     } catch (error) {
       console.error('Failed to initiate call:', error)

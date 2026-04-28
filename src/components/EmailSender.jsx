@@ -4,7 +4,8 @@ import { getAuthToken } from '../utils/storage';
 // Import the API_BASE URL
 const API_BASE = (import.meta.env.VITE_API_BASE || '/api');
 
-export default function EmailSender({ recipient, onClose }) {
+export default function EmailSender({ initialRecipient, onClose }) {
+  const [recipient, setRecipient] = useState(initialRecipient || '');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [attachments, setAttachments] = useState([]);
@@ -12,7 +13,10 @@ export default function EmailSender({ recipient, onClose }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [userEmail, setUserEmail] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (initialRecipient) setRecipient(initialRecipient);
+  }, [initialRecipient]);
   
   useEffect(() => {
     // Fetch user profile to get email
@@ -142,123 +146,92 @@ export default function EmailSender({ recipient, onClose }) {
   };
   
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#121212] rounded-xl p-6 shadow-lg w-full max-w-md mx-auto my-8">
-        <h2 className="text-xl font-semibold mb-4 text-white">Send Email</h2>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       
-      {success ? (
-        <div className="bg-green-800/30 border border-green-500 text-green-200 rounded-lg p-3 mb-4">
-          Email sent successfully!
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-800/30 border border-red-500 text-red-200 rounded-lg p-3 mb-4">
-              {error}
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-lg flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
-          )}
-          
-          <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1">From</label>
-            <input
-              type="email"
-              value={userEmail}
-              disabled
-              className="w-full bg-[#1b1b1b] border border-white/10 rounded-lg px-3 py-2 outline-none opacity-75"
-            />
+            <h2 className="text-lg font-bold text-text-primary">Send Email</h2>
           </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1">To</label>
-            <input
-              type="email"
-              value={recipient}
-              disabled
-              className="w-full bg-[#1b1b1b] border border-white/10 rounded-lg px-3 py-2 outline-none opacity-75"
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1">Subject</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full bg-[#1b1b1b] border border-white/10 rounded-lg px-3 py-2 outline-none"
-              placeholder="Email subject"
-              required
-            />
-          </div>
-          
-          <div className="mb-6">
-            <label className="block text-sm text-gray-300 mb-1">Message</label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-[#1b1b1b] border border-white/10 rounded-lg px-3 py-2 outline-none min-h-[150px]"
-              placeholder="Your message"
-              required
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1">
-              Attachments {attachments.length > 0 && `(${getTotalSize()} MB / 10 MB)`}
-            </label>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              multiple
-              className="w-full bg-[#1b1b1b] border border-white/10 rounded-lg px-3 py-2 outline-none text-gray-300 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer"
-            />
-            
-            {attachments.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {attachments.map((att, index) => (
-                  <div key={index} className="flex items-center justify-between bg-[#1b1b1b] rounded-lg px-3 py-2">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      <span className="text-sm text-gray-300 truncate">{att.filename}</span>
-                      <span className="text-xs text-gray-500 flex-shrink-0">({(att.size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeAttachment(index)}
-                      className="ml-2 text-red-400 hover:text-red-300 flex-shrink-0"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors text-text-muted">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div className="p-6">
+          {success ? (
+            <div className="py-12 text-center">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-            )}
-          </div>
-          
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-transparent border border-white/20 hover:bg-white/5 rounded-lg transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition ${
-                loading ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
-            >
-              {loading ? 'Sending...' : 'Send Email'}
-            </button>
-          </div>
-        </form>
-      )}
+              <h3 className="text-xl font-bold text-text-primary mb-2">Message Sent!</h3>
+              <p className="text-text-secondary">Your email has been delivered successfully.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800/30 rounded-lg text-rose-600 dark:text-rose-400 text-sm font-medium">
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-1.5">From</label>
+                  <input type="text" value={userEmail} disabled className="input-field opacity-60 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-1.5">To</label>
+                  <input type="email" value={recipient} onChange={e => setRecipient(e.target.value)} className="input-field" placeholder="recipient@email.com" required />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-1.5">Subject</label>
+                <input type="text" value={subject} onChange={e => setSubject(e.target.value)} className="input-field" placeholder="What is this about?" required />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-1.5">Message Content</label>
+                <textarea value={message} onChange={e => setMessage(e.target.value)} className="input-field min-h-[160px] resize-none" placeholder="Write your message here..." required />
+              </div>
+
+              <div className="pt-2">
+                <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-2">
+                  Attachments {attachments.length > 0 && `(${getTotalSize()} MB / 10 MB)`}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((att, index) => (
+                    <div key={index} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-border-subtle group">
+                      <span className="text-xs font-medium text-text-primary truncate max-w-[120px]">{att.filename}</span>
+                      <button type="button" onClick={() => removeAttachment(index)} className="text-rose-500 hover:text-rose-600">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  ))}
+                  <label className="cursor-pointer flex items-center justify-center w-8 h-8 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                    <input type="file" onChange={handleFileChange} multiple className="hidden" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                <button type="submit" disabled={loading} className="flex-2 btn-primary shadow-lg shadow-indigo-600/20">
+                  {loading ? 'Sending Message...' : 'Send Email Now'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
+}
 }
