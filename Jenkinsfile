@@ -79,7 +79,7 @@ pipeline {
                     def user = env.EC2_USER
 
                     withCredentials([
-                        sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY'),
+                        sshUserPrivateKey(credentialsId: 'ec2-deploy-key', keyFileVariable: 'SSH_KEY'),
                         usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')
                     ]) {
                         // Convert key to classic PEM format — Jenkins container's older libcrypto
