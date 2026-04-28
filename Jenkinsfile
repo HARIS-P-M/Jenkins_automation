@@ -64,18 +64,19 @@ pipeline {
         stage('Deploy to EC2 K3s') {
             steps {
                 script {
-                    echo "DEBUG: EC2_HOST parameter is: '${params.EC2_HOST}'"
-                    // Create a temporary SSH key file from the parameter
-                    writeFile file: 'ec2_key.pem', text: params.EC2_SSH_KEY
-                    sh 'chmod 600 ec2_key.pem'
+                    echo "DEBUG: Deploying to: '${env.EC2_HOST}'"
 
                     try {
-                        withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
-                            sh "ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${env.EC2_HOST} 'mkdir -p ~/contact-manager-k8s'"
-                            sh "scp -o StrictHostKeyChecking=no -i ec2_key.pem -r k8s/ ${env.EC2_USER}@${env.EC2_HOST}:~/contact-manager-k8s/"
+                        // Use the SSH key stored in Jenkins credentials instead of passing it from GitHub
+                        withCredentials([
+                            sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY_PATH'),
+                            usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')
+                        ]) {
+                            sh "ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH ${env.EC2_USER}@${env.EC2_HOST} 'mkdir -p ~/contact-manager-k8s'"
+                            sh "scp -o StrictHostKeyChecking=no -i $SSH_KEY_PATH -r k8s/ ${env.EC2_USER}@${env.EC2_HOST}:~/contact-manager-k8s/"
 
                             sh """
-                            ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${env.EC2_USER}@${env.EC2_HOST} "
+                            ssh -o StrictHostKeyChecking=no -i $SSH_KEY_PATH ${env.EC2_USER}@${env.EC2_HOST} "
                                 sudo kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=haris-p-m --docker-password='$GITHUB_TOKEN' --docker-email=github-actions@github.com -n default --dry-run=client -o yaml | sudo kubectl apply -f -
                                 
                                 sudo kubectl create secret generic backend-secrets \\
@@ -95,10 +96,9 @@ pipeline {
                             "
                             """
                         }
-                    } finally {
-
-                        // ALWAYS delete the key file even if the build fails
-                        sh 'rm -f ec2_key.pem'
+                    } catch (Exception e) {
+                        echo "Deployment failed: ${e.message}"
+                        throw e
                     }
                 }
             }
