@@ -311,6 +311,7 @@ export default function Auth({ onAuthSuccess }) {
               </button>
             </div>
           </form>
+          )}
         </div>
         
         <p className="text-center text-slate-400 dark:text-slate-600 text-xs mt-8 font-medium">
