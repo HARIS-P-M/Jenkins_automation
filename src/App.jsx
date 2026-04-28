@@ -688,9 +688,16 @@ export default function App() {
         tabs={TABS}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onShowBirthdayReminders={() => setShowBirthdayReminders(true)}
+        onShowContactAnalytics={() => setShowContactAnalytics(true)}
+        onShowImportExport={() => setShowImportExport(true)}
         unreadEmailCount={unreadEmailCount}
         unreadSMSCount={unreadSMSCount}
       />
+
+      {activeTab !== TABS.ADD && activeTab !== TABS.HISTORY && (
+        <FAB ariaLabel="Add contact" onClick={() => setActiveTab(TABS.ADD)} />
+      )}
 
       <ConfirmDialog open={!!pendingDelete} title="Delete Contact" description={`Are you sure you want to delete ${pendingDelete?.name}? This action is permanent.`} confirmText="Delete" cancelText="Cancel" onConfirm={confirmDelete} onCancel={cancelDelete} />
       <DialerDialog open={!!pendingDial} contact={pendingDial} onClose={() => setPendingDial(null)} onDial={(phone) => { setPendingDial(null); handleDial(pendingDial, phone); }} />
