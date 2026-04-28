@@ -159,7 +159,7 @@ export default function AvatarPicker({ value, onChange, size = 100 }) {
 
   return (
     <>
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center justify-center w-full">
         <div
           className="relative group cursor-pointer"
           onClick={() => inputRef.current?.click()}
