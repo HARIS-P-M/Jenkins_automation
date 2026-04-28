@@ -631,7 +631,7 @@ export default function App() {
         )}
       </div>
 
-      <main className="flex-1 overflow-y-auto safe-area-bottom">
+      <main className="flex-1 overflow-y-auto pt-44 safe-area-bottom scroll-smooth">
         {activeTab === TABS.CONTACTS && (
           <ContactsList
             contacts={filteredContacts}
