@@ -94,7 +94,7 @@ export default function App() {
     setShowImportExport(false)
     setShowUserSettings(false)
   }
-  
+
   function handleUpdateUser(updatedUser) {
     setCurrentUser(updatedUser)
     setCurrentUserState(updatedUser)
@@ -104,17 +104,17 @@ export default function App() {
     window.onUserUpdate = handleUpdateUser;
     return () => { window.onUserUpdate = undefined; };
   }, []);
-  
+
   async function handleImportContacts(importedContacts) {
     try {
       if (!Array.isArray(importedContacts) || importedContacts.length === 0) {
         alert('No contacts to import')
         return
       }
-      
+
       let successCount = 0
       let errorCount = 0
-      
+
       // Create each contact from the imported data
       for (const contact of importedContacts) {
         try {
@@ -128,7 +128,7 @@ export default function App() {
             birthday: contact.birthday || null,
             notes: contact.notes || ''
           }
-          
+
           await createContact(contactData)
           successCount++
         } catch (contactError) {
@@ -136,18 +136,18 @@ export default function App() {
           errorCount++
         }
       }
-      
+
       // Refresh contacts list
       const freshContacts = await loadContacts()
       setContacts(freshContacts)
-      
+
       // Show result message
       if (successCount > 0) {
         alert(`Successfully imported ${successCount} contact${successCount > 1 ? 's' : ''}${errorCount > 0 ? `. Failed to import ${errorCount} contact${errorCount > 1 ? 's' : ''}.` : '!'}`)
       } else {
         alert('Failed to import contacts')
       }
-      
+
       setShowImportExport(false)
     } catch (e) {
       if (!handleApiError(e)) {
@@ -175,7 +175,7 @@ export default function App() {
   useEffect(() => {
     seedIfEmpty()
   }, [])
-  
+
   // Make createGroup function accessible from anywhere
   useEffect(() => {
     if (isAuthed) {
@@ -198,7 +198,7 @@ export default function App() {
     }
   }, [])
 
-  // Fetch unread message counts
+
   const fetchUnreadCounts = async () => {
     if (!isAuthed) return
     try {
@@ -211,12 +211,12 @@ export default function App() {
           headers: { Authorization: `Bearer ${token}` }
         })
       ])
-      
+
       if (emailRes.ok) {
         const emailData = await emailRes.json()
         setUnreadEmailCount(emailData.count || 0)
       }
-      
+
       if (smsRes.ok) {
         const smsData = await smsRes.json()
         setUnreadSMSCount(smsData.count || 0)
@@ -228,26 +228,26 @@ export default function App() {
 
   useEffect(() => {
     if (!isAuthed) return
-    ;(async () => {
-      try {
-        const [cts, calls, grps] = await Promise.all([
-          loadContacts(),
-          loadCallHistory(),
-          loadGroups(),
-        ])
-        setContacts(cts)
-        setCallHistory(calls)
-        setGroups(grps)
-        
-        // Fetch initial unread counts
-        await fetchUnreadCounts()
-      } catch (e) {
-        if (!handleApiError(e)) console.error(e)
-      }
-    })()
+      ; (async () => {
+        try {
+          const [cts, calls, grps] = await Promise.all([
+            loadContacts(),
+            loadCallHistory(),
+            loadGroups(),
+          ])
+          setContacts(cts)
+          setCallHistory(calls)
+          setGroups(grps)
 
-    requestNotificationPermission().then(() => {})
-    
+          // Fetch initial unread counts
+          await fetchUnreadCounts()
+        } catch (e) {
+          if (!handleApiError(e)) console.error(e)
+        }
+      })()
+
+    requestNotificationPermission().then(() => { })
+
     // Poll for unread counts every 30 seconds
     const interval = setInterval(fetchUnreadCounts, 30000)
     return () => clearInterval(interval)
@@ -255,14 +255,14 @@ export default function App() {
 
   const filteredContacts = useMemo(() => {
     let filtered = contacts
-    
+
     // Filter by group if one is selected
     if (selectedGroup) {
-      filtered = filtered.filter(contact => 
+      filtered = filtered.filter(contact =>
         contact.groups && contact.groups.includes(selectedGroup)
       )
     }
-    
+
     // Filter by search query
     if (query.trim()) {
       const q = query.toLowerCase()
@@ -272,45 +272,45 @@ export default function App() {
         (c.phones || []).some(p => p.toLowerCase().includes(q))
       )
     }
-    
+
     // Apply advanced search filters if present
     if (advancedSearchParams) {
       const params = advancedSearchParams;
-      
+
       filtered = filtered.filter(contact => {
         // Filter by name
         if (params.name && !contact.name.toLowerCase().includes(params.name.toLowerCase())) {
           return false;
         }
-        
+
         // Filter by email
         if (params.email && (!contact.email || !contact.email.toLowerCase().includes(params.email.toLowerCase()))) {
           return false;
         }
-        
+
         // Filter by phone
         if (params.phone) {
-          const hasMatchingPhone = (contact.phones || []).some(phone => 
+          const hasMatchingPhone = (contact.phones || []).some(phone =>
             phone.includes(params.phone)
           );
           if (!hasMatchingPhone) return false;
         }
-        
+
         // Filter by group
         if (params.group && (!contact.groups || !contact.groups.includes(params.group))) {
           return false;
         }
-        
+
         // Filter by favorite status
         if (params.isFavorite && !contact.favorite) {
           return false;
         }
-        
+
         // Filter by has birthday
         if (params.hasBirthday && !contact.birthday) {
           return false;
         }
-        
+
         // Filter by birthday month
         if (params.hasBirthday && params.birthdayMonth && contact.birthday) {
           const birthdayMonth = new Date(contact.birthday).getMonth().toString();
@@ -318,19 +318,19 @@ export default function App() {
             return false;
           }
         }
-        
+
         // Filter by has notes
         if (params.hasNotes && (!contact.notes || contact.notes === '')) {
           return false;
         }
-        
+
         return true;
       });
     }
-    
+
     return filtered
   }, [contacts, query, selectedGroup, advancedSearchParams])
-  
+
   async function handleCreateGroup(name) {
     try {
       const created = await createGroup(name)
@@ -342,7 +342,7 @@ export default function App() {
       }
     }
   }
-  
+
   async function handleUpdateGroup(groupId, name) {
     try {
       const updated = await updateGroup(groupId, name)
@@ -354,7 +354,7 @@ export default function App() {
       }
     }
   }
-  
+
   async function handleDeleteGroup(groupId) {
     try {
       await deleteGroup(groupId)
@@ -369,17 +369,17 @@ export default function App() {
       }
     }
   }
-  
+
   function handleSelectGroup(groupId) {
     setSelectedGroup(groupId)
   }
-  
+
   function handleAdvancedSearch(searchParams) {
     setAdvancedSearchParams(searchParams);
     // Clear the regular search query when applying advanced search
     setQuery('');
   }
-  
+
   function clearAdvancedSearch() {
     setAdvancedSearchParams(null);
   }
@@ -389,7 +389,7 @@ export default function App() {
       // Remove groups from contact before API call
       const { groups: contactGroups, ...contactData } = newContact
       const created = await createContact({ favorite: false, ...contactData })
-      
+
       // Add contact to selected groups if any
       if (contactGroups && contactGroups.length > 0) {
         for (const groupId of contactGroups) {
@@ -401,7 +401,7 @@ export default function App() {
       } else {
         setContacts(prev => [created, ...prev])
       }
-      
+
       setActiveTab(TABS.CONTACTS)
     } catch (e) {
       if (!handleApiError(e)) {
@@ -422,25 +422,25 @@ export default function App() {
       const currentContact = contacts.find(c => c.id === updated.id)
       const currentGroups = currentContact?.groups || []
       const newGroups = updated.groups || []
-      
+
       // Remove groups property before API call
       const { groups: updatedGroups, ...contactData } = updated
       const saved = await apiUpdateContact(updated.id, contactData)
-      
+
       // Handle group changes
       const groupsToAdd = newGroups.filter(g => !currentGroups.includes(g))
       const groupsToRemove = currentGroups.filter(g => !newGroups.includes(g))
-      
+
       // Add contact to new groups
       for (const groupId of groupsToAdd) {
         await addContactToGroup(saved.id, groupId)
       }
-      
+
       // Remove contact from removed groups
       for (const groupId of groupsToRemove) {
         await removeContactFromGroup(saved.id, groupId)
       }
-      
+
       // Update contact in state with groups
       const finalContact = { ...saved, groups: newGroups }
       setContacts(prev => prev.map(c => (c.id === finalContact.id ? finalContact : c)))
@@ -512,7 +512,7 @@ export default function App() {
       alert('This contact has no email address');
       return;
     }
-    
+
     // Show email dialog using EmailSender component
     setShowEmailDialog(true);
     setEmailRecipient(contact.email);
@@ -523,12 +523,12 @@ export default function App() {
       alert('This contact has no phone number');
       return;
     }
-    
+
     // Show SMS dialog using SMSSender component
     setShowSMSDialog(true);
-    setSMSRecipient({ 
-      phone: contact.phones[0], 
-      name: contact.name 
+    setSMSRecipient({
+      phone: contact.phones[0],
+      name: contact.name
     });
   }
 
@@ -539,19 +539,19 @@ export default function App() {
     }
     if (!phone) phone = contact?.phones?.[0]
     if (!phone) return
-    
+
     // Log the call first
     logCall(contact, phone)
-    
+
     // Try to initiate the call
     try {
       // Method 1: Use tel: protocol (works on mobile devices)
       const telUrl = `tel:${phone}`
       console.log('Initiating call to:', phone, 'via URL:', telUrl)
-      
+
       // Directly open without timeout to maintain user gesture
       window.location.href = telUrl
-      
+
     } catch (error) {
       console.error('Failed to initiate call:', error)
       // Fallback: show a message with the number
@@ -614,7 +614,7 @@ export default function App() {
             <div className="flex items-center gap-2 w-full md:w-auto max-w-md">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <svg className="h-4 w-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
                 <input
                   type="text"
@@ -624,12 +624,12 @@ export default function App() {
                   className="input-field pl-10"
                 />
               </div>
-              <button 
+              <button
                 onClick={() => setShowAdvancedSearch(true)}
                 className={`p-2.5 rounded-lg border border-border-subtle hover:bg-bg-hover transition-colors ${advancedSearchParams ? 'text-indigo-600 border-indigo-600/30 bg-indigo-50 dark:bg-indigo-900/10' : 'text-text-secondary'}`}
                 title="Advanced Search"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" /></svg>
               </button>
             </div>
           )}
@@ -638,7 +638,7 @@ export default function App() {
         {advancedSearchParams && (
           <div className="mb-6 p-3 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/30 rounded-lg flex items-center justify-between text-xs font-medium text-indigo-700 dark:text-indigo-400">
             <span className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               Advanced Search Active
             </span>
             <button onClick={clearAdvancedSearch} className="hover:underline">Clear Filters</button>
@@ -681,11 +681,11 @@ export default function App() {
           {activeTab === TABS.HISTORY && (
             <CallHistory callHistory={callHistory} contacts={contacts} onDial={handleDial} onOpenDetails={openEditFromDetails} onToggleFavorite={toggleFavorite} />
           )}
-          
+
           {activeTab === TABS.EMAIL_INBOX && (
             <EmailInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(to) => { setEmailRecipient(to); setShowEmailDialog(true); }} onMessageRead={fetchUnreadCounts} />
           )}
-          
+
           {activeTab === TABS.SMS_INBOX && (
             <SMSInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(phone, name) => { setSMSRecipient({ phone, name }); setShowSMSDialog(true); }} onMessageRead={fetchUnreadCounts} />
           )}
@@ -693,26 +693,28 @@ export default function App() {
       </main>
 
       {activeTab !== TABS.ADD && activeTab !== TABS.HISTORY && (
-        <button 
+        <button
           onClick={() => setActiveTab(TABS.ADD)}
           className="fixed bottom-24 right-6 md:bottom-12 md:right-12 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all z-40 flex items-center justify-center"
           aria-label="Add Contact"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
         </button>
       )}
 
       <ConfirmDialog open={!!pendingDelete} title="Delete Contact" description={`Are you sure you want to delete ${pendingDelete?.name}? This action is permanent.`} confirmText="Delete" cancelText="Cancel" onConfirm={confirmDelete} onCancel={cancelDelete} />
       <DialerDialog open={!!pendingDial} contact={pendingDial} onClose={() => setPendingDial(null)} onDial={(phone) => { setPendingDial(null); handleDial(pendingDial, phone); }} />
-      <ImportExportDialog open={showImportExport} onClose={() => setShowImportExport(false)} onImport={handleImportContacts} onExport={() => {}} contacts={contacts} />
+      <ImportExportDialog open={showImportExport} onClose={() => setShowImportExport(false)} onImport={handleImportContacts} onExport={() => { }} contacts={contacts} />
       <CreateGroupDialog open={showCreateGroup} onClose={() => setShowCreateGroup(false)} onCreateGroup={handleCreateGroup} />
       <BirthdayRemindersDialog open={showBirthdayReminders} onClose={() => setShowBirthdayReminders(false)} contacts={contacts} onUpdateContact={handleUpdateContact} />
       <ContactAnalytics open={showContactAnalytics} onClose={() => setShowContactAnalytics(false)} contacts={contacts} groups={groups} callHistory={callHistory} />
       <AdvancedSearchDialog open={showAdvancedSearch} onClose={() => setShowAdvancedSearch(false)} onSearch={handleAdvancedSearch} groups={groups} />
-      
+
       {showEmailDialog && <EmailSender open={showEmailDialog} onClose={() => setShowEmailDialog(false)} initialRecipient={emailRecipient} />}
       {showSMSDialog && <SMSSender open={showSMSDialog} onClose={() => setShowSMSDialog(false)} recipient={smsRecipient.phone} recipientName={smsRecipient.name} />}
     </div>
   )
-}/ /   B u i l d   t r i g g e r   0 4 / 2 8 / 2 0 2 6   1 4 : 5 4 : 1 3  
+}
+/ /   B u i l d   t r i g g e r   0 4 / 2 8 / 2 0 2 6   1 4 : 5 4 : 1 3 
+ 
  
