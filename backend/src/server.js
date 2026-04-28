@@ -136,6 +136,8 @@ const UserSchema = new mongoose.Schema({
   twoFactorEnabled: { type: Boolean, default: false },
   twoFactorMethod: { type: String, enum: ['email', 'app'], default: null },
   twoFactorSecret: { type: String, default: null },
+  resetPasswordToken: { type: String, default: null },
+  resetPasswordExpires: { type: Date, default: null },
 }, { timestamps: true })
 
 UserSchema.set('toJSON', {
@@ -369,6 +371,78 @@ app.post('/api/auth/disable-2fa', authMiddleware, async (req, res) => {
     res.json({ success: true })
   } catch (e) {
     res.status(400).json({ error: e.message })
+  }
+})
+
+// Forgot Password - Send Code
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email) return res.status(400).json({ error: 'Email is required' })
+
+    const user = await User.findOne({ 
+      $or: [{ email: email }, { recoveryEmail: email }] 
+    })
+
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email' })
+    }
+
+    // Generate 6-digit code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString()
+    user.resetPasswordToken = resetCode
+    user.resetPasswordExpires = Date.now() + 3600000 // 1 hour
+    await user.save()
+
+    // Send Email
+    const isDemoMode = DEMO_MODE || EMAIL_USER === 'your_email@gmail.com'
+    
+    if (isDemoMode) {
+      console.log(`[FORGOT PASSWORD] Reset code for ${user.email} is: ${resetCode}`)
+    } else {
+      await transporter.sendMail({
+        from: EMAIL_USER,
+        to: user.email,
+        subject: 'Password Reset Code - Contact Manager',
+        text: `Your password reset code is: ${resetCode}. It will expire in 1 hour.`
+      })
+    }
+
+    res.json({ success: true, message: 'Reset code sent to your email' })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Reset Password - Verify Code & Update
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, code and new password are required' })
+    }
+
+    const user = await User.findOne({ 
+      $or: [{ email: email }, { recoveryEmail: email }],
+      resetPasswordToken: code,
+      resetPasswordExpires: { $gt: Date.now() }
+    })
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired reset code' })
+    }
+
+    // Update password
+    const salt = generateSalt()
+    user.salt = salt
+    user.passwordHash = hashPassword(newPassword, salt)
+    user.resetPasswordToken = null
+    user.resetPasswordExpires = null
+    await user.save()
+
+    res.json({ success: true, message: 'Password updated successfully' })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
 })
 
