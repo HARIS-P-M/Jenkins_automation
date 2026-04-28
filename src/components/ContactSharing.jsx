@@ -89,17 +89,20 @@ const ContactSharing = ({ contact, onClose }) => {
   };
   
   const generateQRCode = () => {
-    // Placeholder for QR code image
-    // In a real app, we would use a QR code generation library
+    const qrData = encodeURIComponent(vcardData);
+    const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${qrData}`;
+    
     return (
-      <div className="bg-white p-6 rounded-lg text-center">
-        <div className="w-48 h-48 mx-auto bg-[#121212] flex items-center justify-center mb-2">
-          <div className="text-xs text-gray-400">
-            QR Code Placeholder<br />
-            (In a real app, a QR code would be generated here)
-          </div>
+      <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
+        <div className="w-48 h-48 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center relative">
+          <img 
+            src={qrURL} 
+            alt="Contact QR Code" 
+            className="w-full h-full object-contain p-2"
+            onLoad={(e) => e.target.classList.add('opacity-100')}
+          />
         </div>
-        <div className="text-black text-sm mt-2">Scan with a QR code reader</div>
+        <div className="text-slate-900 font-bold text-xs mt-4 tracking-tight">Scan to save contact</div>
       </div>
     );
   };
