@@ -596,7 +596,7 @@ export default function App() {
       <main className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-40">
         {/* Page Content Header with Search */}
         <div className={`py-8 flex flex-col md:flex-row md:items-center justify-between gap-4 ${(activeTab === TABS.ADD || activeTab === TABS.EDIT) ? 'max-w-2xl mx-auto w-full' : ''}`}>
-          <div className={(activeTab === TABS.ADD || activeTab === TABS.EDIT) ? 'text-center md:text-left w-full' : ''}>
+          <div className={(activeTab === TABS.ADD || activeTab === TABS.EDIT) ? 'text-center w-full' : ''}>
             <h1 className="text-2xl font-bold text-text-primary">
               {activeTab === TABS.CONTACTS && 'My Contacts'}
               {activeTab === TABS.ADD && 'Add New Contact'}
@@ -714,4 +714,5 @@ export default function App() {
       {showSMSDialog && <SMSSender open={showSMSDialog} onClose={() => setShowSMSDialog(false)} recipient={smsRecipient.phone} recipientName={smsRecipient.name} />}
     </div>
   )
-}
+}/ /   B u i l d   t r i g g e r   0 4 / 2 8 / 2 0 2 6   1 4 : 5 4 : 1 3  
+ 
