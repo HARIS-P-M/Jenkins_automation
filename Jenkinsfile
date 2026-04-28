@@ -19,7 +19,7 @@ pipeline {
         REPO = "haris-p-m/jenkins_automation" 
         TAG = "${env.BUILD_NUMBER}"
         EC2_USER = "ubuntu"
-        EC2_HOST = "98.91.249.246"
+        EC2_HOST = "107.22.109.219"
     }
 
     options {
