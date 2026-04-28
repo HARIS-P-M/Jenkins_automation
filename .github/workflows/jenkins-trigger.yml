@@ -36,7 +36,6 @@ jobs:
         env:
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
         run: |
-          # Trigger Jenkins build. It doesn't need parameters now because they are in the file!
+          # Simple trigger. Smee is already pointing to the build endpoint.
           curl -i -X POST "https://smee.io/haris-jenkins-automation" \
-            --user "admin:$JENKINS_API_TOKEN" \
-            --data-urlencode "token=haris-token"
+            --user "admin:$JENKINS_API_TOKEN"
