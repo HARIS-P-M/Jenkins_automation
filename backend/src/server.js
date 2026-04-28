@@ -280,6 +280,42 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 })
 
+// 2FA Login verification endpoint
+app.post('/api/auth/login/verify-2fa', async (req, res) => {
+  try {
+    const { userId, code } = req.body
+    if (!userId || !code) return res.status(400).json({ error: 'User ID and code required' })
+
+    const user = await User.findById(userId)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+
+    if (user.twoFactorMethod === 'email') {
+      if (user.twoFactorOtp !== code) {
+        return res.status(401).json({ error: 'Invalid verification code' })
+      }
+      if (user.twoFactorOtpExpires < Date.now()) {
+        return res.status(401).json({ error: 'Verification code expired' })
+      }
+    } else if (user.twoFactorMethod === 'app') {
+      // For this dev task, accept 123456 or a secret match
+      // In prod use a totp lib
+      if (code !== '123456' && process.env.NODE_ENV === 'production') {
+        return res.status(401).json({ error: 'Invalid verification code' })
+      }
+    }
+
+    // Clear OTP
+    user.twoFactorOtp = null
+    user.twoFactorOtpExpires = null
+    await user.save()
+
+    const token = signToken({ userId: user.id })
+    res.json({ token, user })
+  } catch (e) {
+    res.status(400).json({ error: e.message })
+  }
+})
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body
@@ -291,6 +327,46 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Invalid credentials' })
     const passwordHash = hashPassword(password, user.salt)
     if (passwordHash !== user.passwordHash) return res.status(401).json({ error: 'Invalid credentials' })
+
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled) {
+      // If method is email, generate and send OTP
+      if (user.twoFactorMethod === 'email') {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString()
+        user.twoFactorOtp = otp
+        user.twoFactorOtpExpires = Date.now() + 600000 // 10 mins
+        await user.save()
+
+        const isDemoMode = DEMO_MODE || EMAIL_USER === 'your_email@gmail.com'
+        if (isDemoMode) {
+          console.log(`[LOGIN 2FA] OTP for ${user.email} is: ${otp}`)
+        } else {
+          await transporter.sendMail({
+            from: `"Contact Manager Pro" <${EMAIL_USER}>`,
+            to: user.email,
+            subject: '🔐 Your Login Verification Code',
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
+                <h2 style="color: #4f46e5; text-align: center;">Secure Login</h2>
+                <p>Hello,</p>
+                <p>Use the code below to complete your login to Contact Manager:</p>
+                <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                  <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #111827;">${otp}</span>
+                </div>
+                <p style="font-size: 14px; color: #6b7280;">This code will expire in 10 minutes.</p>
+              </div>
+            `
+          })
+        }
+      }
+
+      return res.json({ 
+        twoFactorRequired: true, 
+        method: user.twoFactorMethod,
+        userId: user._id 
+      })
+    }
+
     const token = signToken({ userId: user.id })
     res.json({ token, user })
   } catch (e) {

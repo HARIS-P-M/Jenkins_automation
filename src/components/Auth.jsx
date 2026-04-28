@@ -20,6 +20,10 @@ export default function Auth({ onAuthSuccess }) {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [show2FA, setShow2FA] = useState(false)
+  const [twoFactorUserId, setTwoFactorUserId] = useState('')
+  const [twoFactorMethod, setTwoFactorMethod] = useState('')
+  const [twoFactorCode, setTwoFactorCode] = useState('')
 
   // Handle URL parameters for password reset
   useEffect(() => {
@@ -35,6 +39,28 @@ export default function Auth({ onAuthSuccess }) {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   }, [])
+
+  const handle2FAVerify = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const response = await fetch(`${API_BASE}/auth/login/verify-2fa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: twoFactorUserId, code: twoFactorCode })
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Verification failed')
+      
+      setAuthToken(data.token)
+      onAuthSuccess(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -56,9 +82,19 @@ export default function Auth({ onAuthSuccess }) {
         const data = await response.json()
         if (!response.ok) throw new Error(data.error || 'Authentication failed')
         
+        if (data.twoFactorRequired) {
+          setShow2FA(true)
+          setTwoFactorUserId(data.userId)
+          setTwoFactorMethod(data.method)
+          return
+        }
+
         setAuthToken(data.token)
         onAuthSuccess(data)
       } 
+      else if (mode === MODES.LOGIN && show2FA) {
+        // Handled by handle2FAVerify
+      }
       else if (mode === MODES.FORGOT) {
         const response = await fetch(`${API_BASE}/auth/forgot-password`, {
           method: 'POST',
@@ -108,13 +144,67 @@ export default function Auth({ onAuthSuccess }) {
 
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 p-8">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 text-center">
-            {mode === MODES.LOGIN && 'Welcome Back'}
-            {mode === MODES.SIGNUP && 'Create Account'}
-            {mode === MODES.FORGOT && 'Forgot Password'}
-            {mode === MODES.RESET && 'Secure Password Reset'}
+            {show2FA ? 'Two-Step Verification' : (
+              <>
+                {mode === MODES.LOGIN && 'Welcome Back'}
+                {mode === MODES.SIGNUP && 'Create Account'}
+                {mode === MODES.FORGOT && 'Forgot Password'}
+                {mode === MODES.RESET && 'Secure Password Reset'}
+              </>
+            )}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {show2FA ? (
+            <form onSubmit={handle2FAVerify} className="space-y-6">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {twoFactorMethod === 'email' 
+                    ? "We've sent a 6-digit verification code to your email." 
+                    : "Enter the 6-digit code from your authenticator app."}
+                </p>
+              </div>
+
+              {error && (
+                <div className="p-4 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30 text-rose-600 dark:text-rose-400 text-sm font-semibold rounded-2xl flex items-center gap-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Verification Code</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-4 text-center text-2xl font-bold tracking-[1em] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  placeholder="000000"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || twoFactorCode.length !== 6}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {loading ? 'Verifying...' : 'Complete Sign In'}
+              </button>
+
+              <button 
+                type="button" 
+                onClick={() => setShow2FA(false)} 
+                className="w-full text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
+                Cancel and back to Login
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <div className="p-4 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30 text-rose-600 dark:text-rose-400 text-sm font-semibold rounded-2xl flex items-center gap-3">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
