@@ -18,12 +18,14 @@ class WebRTCService {
     this.isConnecting = true;
 
     try {
+      // Use polling as primary to avoid WSS SSL issues on IP addresses
       this.socket = io(`${(import.meta.env.VITE_API_BASE || '/api').replace('/api', '')}`, {
         reconnection: true,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
-        timeout: 10000,
-        transports: ['websocket', 'polling']
+        reconnectionAttempts: 10,
+        reconnectionDelay: 2000,
+        timeout: 20000,
+        transports: ['polling', 'websocket'], // Polling first is safer for IP-based SSL issues
+        withCredentials: true
       });
 
       this.socket.on('connect', () => {
