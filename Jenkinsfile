@@ -65,35 +65,30 @@ pipeline {
             steps {
                 script {
                     echo "DEBUG: Deploying to: '${env.EC2_HOST}'"
-                }
-                withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')]) {
-                    sshagent(credentials: ['deploy-ssh-key']) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ${env.EC2_USER}@${env.EC2_HOST} 'mkdir -p ~/contact-manager-k8s'
-                            scp -o StrictHostKeyChecking=no -r k8s/ ${env.EC2_USER}@${env.EC2_HOST}:~/contact-manager-k8s/
-                            ssh -o StrictHostKeyChecking=no ${env.EC2_USER}@${env.EC2_HOST} '
-                                sudo kubectl create secret docker-registry ghcr-secret \
-                                  --docker-server=ghcr.io \
-                                  --docker-username=haris-p-m \
-                                  --docker-password=${GITHUB_TOKEN} \
-                                  --docker-email=github-actions@github.com \
-                                  -n default --dry-run=client -o yaml | sudo kubectl apply -f -
+                    def host = env.EC2_HOST
+                    def user = env.EC2_USER
 
-                                sudo kubectl create secret generic backend-secrets \
-                                  --from-literal=MONGO_URI=${params.MONGO_URI} \
-                                  --from-literal=JWT_SECRET=${params.JWT_SECRET} \
-                                  --from-literal=FRONTEND_ORIGIN=${params.FRONTEND_ORIGIN} \
-                                  --from-literal=EMAIL_USER=${params.EMAIL_USER} \
-                                  --from-literal=EMAIL_PASS=${params.EMAIL_PASS} \
-                                  --from-literal=TWILIO_ACCOUNT_SID=${params.TWILIO_ACCOUNT_SID} \
-                                  --from-literal=TWILIO_AUTH_TOKEN=${params.TWILIO_AUTH_TOKEN} \
-                                  --from-literal=TWILIO_PHONE_NUMBER=${params.TWILIO_PHONE_NUMBER} \
-                                  --dry-run=client -o yaml | sudo kubectl apply -f -
+                    withCredentials([
+                        sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY'),
+                        usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')
+                    ]) {
+                        // Use \$SSH_KEY so the SHELL resolves it (not Groovy), avoiding the masking/interpolation issue
+                        sh """
+                            chmod 600 \$SSH_KEY
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${user}@${host} 'mkdir -p ~/contact-manager-k8s'
+                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY -r k8s/ ${user}@${host}:~/contact-manager-k8s/
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${user}@${host} bash << 'REMOTE_EOF'
+                                sudo kubectl create secret docker-registry ghcr-secret \\
+                                  --docker-server=ghcr.io \\
+                                  --docker-username=haris-p-m \\
+                                  --docker-password=\$GITHUB_TOKEN \\
+                                  --docker-email=github-actions@github.com \\
+                                  -n default --dry-run=client -o yaml | sudo kubectl apply -f -
 
                                 sudo kubectl apply -f ~/contact-manager-k8s/k8s/
                                 sudo kubectl rollout status deployment/frontend --timeout=60s || true
                                 sudo kubectl rollout status deployment/backend --timeout=60s || true
-                            '
+REMOTE_EOF
                         """
                     }
                 }
