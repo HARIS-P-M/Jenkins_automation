@@ -401,10 +401,40 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       console.log(`[FORGOT PASSWORD] Reset code for ${user.email} is: ${resetCode}`)
     } else {
       await transporter.sendMail({
-        from: EMAIL_USER,
+        from: `"Contact Manager Support" <${EMAIL_USER}>`,
         to: user.email,
-        subject: 'Password Reset Code - Contact Manager',
-        text: `Your password reset code is: ${resetCode}. It will expire in 1 hour.`
+        subject: '🔐 Password Reset Verification Code',
+        html: `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px;">
+            <div style="background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb;">
+              <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 64px; height: 64px; background-color: #4f46e5; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                  <span style="font-size: 32px; color: white;">🛡️</span>
+                </div>
+                <h1 style="font-size: 24px; font-weight: 800; color: #111827; margin: 0; letter-spacing: -0.025em;">Reset Your Password</h1>
+                <p style="color: #6b7280; font-size: 16px; margin-top: 8px;">Secure verification for Contact Manager Pro</p>
+              </div>
+
+              <div style="background-color: #f3f4f6; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 32px;">
+                <p style="text-transform: uppercase; font-size: 12px; font-weight: 700; color: #4b5563; letter-spacing: 0.1em; margin-bottom: 12px;">Your Verification Code</p>
+                <div style="font-size: 48px; font-weight: 800; color: #4f46e5; letter-spacing: 0.25em; margin: 0;">${resetCode}</div>
+              </div>
+
+              <div style="color: #374151; font-size: 15px; line-height: 1.6; margin-bottom: 32px;">
+                <p>Hello,</p>
+                <p>We received a request to reset your password. Use the code above to complete the process. For security reasons, this code will expire in <strong>1 hour</strong>.</p>
+                <p style="background-color: #fff7ed; border-left: 4px solid #f97316; padding: 12px; color: #9a3412; font-size: 14px;">
+                  <strong>Important:</strong> If you did not request this reset, please ignore this email or contact support if you have concerns about your account security.
+                </p>
+              </div>
+
+              <div style="border-top: 1px solid #e5e7eb; padding-top: 24px; text-align: center; color: #9ca3af; font-size: 12px;">
+                <p style="margin: 0;">© 2026 Contact Manager Enterprise. All rights reserved.</p>
+                <p style="margin: 4px 0;">Professional Suite • Secure Connection</p>
+              </div>
+            </div>
+          </div>
+        `
       })
     }
 
