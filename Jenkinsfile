@@ -82,12 +82,17 @@ pipeline {
                         sshUserPrivateKey(credentialsId: 'deploy-ssh-key', keyFileVariable: 'SSH_KEY'),
                         usernamePassword(credentialsId: 'github-token', usernameVariable: 'GITHUB_USER', passwordVariable: 'GITHUB_TOKEN')
                     ]) {
-                        // Use \$SSH_KEY so the SHELL resolves it (not Groovy), avoiding the masking/interpolation issue
+                        // Convert key to classic PEM format — Jenkins container's older libcrypto
+                        // cannot load the newer OpenSSH key format (-----BEGIN OPENSSH PRIVATE KEY-----)
+                        sh '''
+                            cp $SSH_KEY /tmp/ec2_deploy.pem
+                            chmod 600 /tmp/ec2_deploy.pem
+                            ssh-keygen -p -m PEM -f /tmp/ec2_deploy.pem -N "" || true
+                        '''
                         sh """
-                            chmod 600 \$SSH_KEY
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${user}@${host} 'mkdir -p ~/contact-manager-k8s'
-                            scp -o StrictHostKeyChecking=no -i \$SSH_KEY -r k8s/ ${user}@${host}:~/contact-manager-k8s/
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ${user}@${host} bash << 'REMOTE_EOF'
+                            ssh -o StrictHostKeyChecking=no -i /tmp/ec2_deploy.pem ${user}@${host} 'mkdir -p ~/contact-manager-k8s'
+                            scp -o StrictHostKeyChecking=no -i /tmp/ec2_deploy.pem -r k8s/ ${user}@${host}:~/contact-manager-k8s/
+                            ssh -o StrictHostKeyChecking=no -i /tmp/ec2_deploy.pem ${user}@${host} bash << 'REMOTE_EOF'
                                 sudo kubectl create secret docker-registry ghcr-secret \\
                                   --docker-server=ghcr.io \\
                                   --docker-username=haris-p-m \\
@@ -99,6 +104,7 @@ pipeline {
                                 sudo kubectl rollout status deployment/frontend --timeout=60s || true
                                 sudo kubectl rollout status deployment/backend --timeout=60s || true
 REMOTE_EOF
+                            rm -f /tmp/ec2_deploy.pem
                         """
                     }
                 }
