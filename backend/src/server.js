@@ -64,8 +64,8 @@ app.use(metricsMiddleware)
 // Configure nodemailer
 const EMAIL_USER = process.env.EMAIL_USER || 'your_email@gmail.com'
 const EMAIL_PASS = process.env.EMAIL_PASS || 'your_app_password'
-// Force demo mode to avoid authentication errors
-const DEMO_MODE = true;
+// Only use demo mode if credentials are missing
+const DEMO_MODE = EMAIL_USER === 'your_email@gmail.com' || !EMAIL_PASS;
 
 console.log('Setting up email transporter with:', EMAIL_USER, '(Demo mode:', DEMO_MODE ? 'enabled' : 'disabled', ')');
 
