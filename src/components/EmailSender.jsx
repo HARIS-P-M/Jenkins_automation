@@ -89,20 +89,6 @@ export default function EmailSender({ initialRecipient, onClose }) {
       }, 2000);
     } catch (err) {
       console.error('Email sending error:', err);
-      
-      // If this is our first retry, try again automatically
-      if (retryCount === 0) {
-        setRetryCount(1);
-        setError('Retrying...');
-        
-        // Wait a moment and retry
-        setTimeout(() => {
-          setError('');
-          handleSubmit(e);
-        }, 1000);
-        return;
-      }
-      
       setError(err.message || 'Failed to send email. Please try again later.');
     } finally {
       setLoading(false);
@@ -233,5 +219,4 @@ export default function EmailSender({ initialRecipient, onClose }) {
       </div>
     </div>
   );
-}
 }
