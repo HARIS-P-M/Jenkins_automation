@@ -885,119 +885,86 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
     console.log('SMS request received:', { to, messageLength: message?.length });
 
     if (!to || !message) {
-      return res.status(400).json({ error: 'Phone number and message are required' })
+      return res.status(400).json({ error: 'Recipient phone number and message are required' })
     }
 
-    // Get user details
     const user = await User.findById(userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
 
-    console.log('User found:', user.email);
-
-    // Twilio configuration
     const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID
     const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
     const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER
 
-    // Check if Twilio is configured
-    const isTwilioConfigured = TWILIO_ACCOUNT_SID &&
-      TWILIO_AUTH_TOKEN &&
-      TWILIO_PHONE_NUMBER &&
-      TWILIO_ACCOUNT_SID !== 'your_twilio_account_sid'
+    const isTwilioConfigured = TWILIO_ACCOUNT_SID && 
+                             TWILIO_AUTH_TOKEN && 
+                             TWILIO_PHONE_NUMBER && 
+                             !TWILIO_ACCOUNT_SID.includes('your_')
+
+    const fromNumber = user.mobileNumber || user.email || 'System'
 
     if (!isTwilioConfigured) {
-      // Demo mode - simulate SMS sending
-      console.log('DEMO MODE: SMS would be sent with:', {
-        from: user.email,
-        to,
-        messagePreview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
-      });
+      console.log('DEMO MODE: SMS sent:', { from: fromNumber, to, message });
 
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Save SMS to database as sent
-      await SMSMessage.create({
+      // Save to database
+      const sentMsg = await SMSMessage.create({
         ownerId: userId,
-        from: user.mobileNumber || user.email,
+        from: fromNumber,
         to,
         message,
         type: 'sent',
         timestamp: new Date()
-      });
+      })
 
-      // Check if recipient is a registered user and create received message
-      const recipient = await User.findOne({ mobileNumber: to });
+      // Delivery to internal user if exists
+      const recipient = await User.findOne({ mobileNumber: to })
       if (recipient) {
         await SMSMessage.create({
           ownerId: recipient._id,
-          from: user.mobileNumber || user.email,
+          from: fromNumber,
           to,
           message,
           type: 'received',
           timestamp: new Date()
-        });
+        })
       }
 
-      // Return success response
-      return res.json({
-        success: true,
+      return res.json({ 
+        success: true, 
         message: 'SMS sent successfully (demo mode)',
-        messageId: `demo_${Date.now()}`
-      });
+        id: sentMsg._id
+      })
     }
 
-    // Production mode with Twilio
+    // Production (Twilio)
     try {
-      // Dynamically import Twilio (only if configured)
       const twilio = await import('twilio')
       const client = twilio.default(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-
-      const messageResponse = await client.messages.create({
+      
+      const twilioRes = await client.messages.create({
         body: message,
         from: TWILIO_PHONE_NUMBER,
         to: to
       })
 
-      console.log('SMS sent successfully:', messageResponse.sid);
-
-      // Save SMS to database as sent
-      await SMSMessage.create({
+      const sentMsg = await SMSMessage.create({
         ownerId: userId,
         from: TWILIO_PHONE_NUMBER,
         to,
         message,
         type: 'sent',
         timestamp: new Date()
-      });
-
-      // Check if recipient is a registered user and create received message
-      const recipient = await User.findOne({ mobileNumber: to });
-      if (recipient) {
-        await SMSMessage.create({
-          ownerId: recipient._id,
-          from: TWILIO_PHONE_NUMBER,
-          to,
-          message,
-          type: 'received',
-          timestamp: new Date()
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'SMS sent successfully',
-        messageId: messageResponse.sid
       })
-    } catch (twilioError) {
-      console.error('Twilio error:', twilioError);
-      throw new Error('Failed to send SMS via Twilio: ' + twilioError.message)
+
+      res.json({ success: true, message: 'SMS sent via Twilio', sid: twilioRes.sid, id: sentMsg._id })
+    } catch (err) {
+      console.error('Twilio Error:', err.message)
+      res.status(502).json({ error: 'Twilio delivery failed', details: err.message })
     }
   } catch (e) {
-    console.error('Error sending SMS:', e)
-    res.status(500).json({ error: 'Failed to send SMS', details: e.message })
+    console.error('Backend Error in send-sms:', e)
+    res.status(500).json({ error: 'Internal server error during SMS operation', details: e.message })
   }
-});
+})
 
 // Get received emails
 app.get('/api/messages/email/received', authMiddleware, async (req, res) => {
