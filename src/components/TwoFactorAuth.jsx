@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
+
 
 const TwoFactorAuth = ({ onClose, onVerify }) => {
   const [step, setStep] = useState('setup'); // setup, verify
@@ -111,9 +113,11 @@ const TwoFactorAuth = ({ onClose, onVerify }) => {
           <p className="mb-2 text-slate-600 dark:text-gray-300">
             Scan the QR code or enter this key in your authenticator app:
           </p>
-          <div className="bg-slate-100 dark:bg-white p-4 rounded-lg mb-4 text-center">
-            <div className="text-slate-800 dark:text-gray-800 font-mono text-sm mb-2">{secret}</div>
-            <div className="text-slate-500 dark:text-gray-600 text-xs">QR Code would appear here</div>
+          <div className="bg-slate-100 dark:bg-white p-4 rounded-lg mb-4 flex flex-col items-center text-center">
+            <div className="bg-white p-2 rounded-lg mb-4 inline-block border border-slate-200">
+              <QRCodeCanvas value={`otpauth://totp/ContactManager?secret=${secret}&issuer=ContactManager`} size={150} />
+            </div>
+            <div className="text-slate-800 dark:text-gray-800 font-mono text-sm tracking-widest">{secret}</div>
           </div>
         </div>
       )}
