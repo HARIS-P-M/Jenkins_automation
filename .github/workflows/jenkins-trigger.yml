@@ -23,6 +23,12 @@ jobs:
           TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
         run: |
+          echo "DEBUG: EC2_HOST length is ${#EC2_HOST}"
+          echo "DEBUG: SSH_KEY length is ${#EC2_SSH_KEY}"
+          if [ -z "$EC2_HOST" ]; then
+            echo "ERROR: EC2_HOST secret is MISSING in GitHub!"
+            exit 1
+          fi
           curl -i -X POST "https://smee.io/haris-jenkins-automation" \
             --user "admin:$JENKINS_API_TOKEN" \
             --data-urlencode "token=haris-token" \
