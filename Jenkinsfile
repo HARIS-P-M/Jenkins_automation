@@ -21,9 +21,14 @@ pipeline {
         EC2_USER = "ubuntu"
     }
 
+    options {
+        skipDefaultCheckout()
+    }
+
     stages {
-        stage('Checkout') {
+        stage('Clean & Checkout') {
             steps {
+                deleteDir()
                 checkout scm
             }
         }
