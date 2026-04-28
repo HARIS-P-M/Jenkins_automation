@@ -21,6 +21,8 @@ jobs:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
+          JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
+        run: |
           curl -i -X POST "https://smee.io/haris-jenkins-automation" \
             --user "admin:$JENKINS_API_TOKEN" \
             --data-urlencode "token=haris-token" \
@@ -34,7 +36,3 @@ jobs:
             --data-urlencode "TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID" \
             --data-urlencode "TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN" \
             --data-urlencode "TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER"
-
-
-
-
