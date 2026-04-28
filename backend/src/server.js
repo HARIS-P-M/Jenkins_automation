@@ -862,23 +862,40 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
     }
 
     // In production mode with real credentials:
+    // Map attachments from frontend format to nodemailer format
+    const formattedAttachments = (attachments || []).map(att => ({
+      filename: att.filename,
+      content: att.data,
+      encoding: 'base64',
+      contentType: att.contentType
+    }));
+
     const mailOptions = {
       from: EMAIL_USER,
       to,
       subject,
       text: message,
-      replyTo: user.email
+      replyTo: user.email,
+      attachments: formattedAttachments
     }
 
     console.log('Sending email with options:', {
       from: EMAIL_USER,
       to,
       subject,
-      replyTo: user.email
+      replyTo: user.email,
+      attachmentCount: formattedAttachments.length
     });
 
     const info = await transporter.sendMail(mailOptions)
     console.log('Email sent successfully:', info.response);
+
+    // Strip massive base64 'data' before saving to DB to prevent MongoDB bloat
+    const dbAttachments = (attachments || []).map(att => ({
+      filename: att.filename,
+      contentType: att.contentType,
+      size: att.size
+    }));
 
     // Save email to database as sent
     await EmailMessage.create({
@@ -887,7 +904,7 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
       to,
       subject,
       message,
-      attachments: attachments || [],
+      attachments: dbAttachments,
       type: 'sent',
       timestamp: new Date()
     });
@@ -901,7 +918,7 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
         to,
         subject,
         message,
-        attachments: attachments || [],
+        attachments: dbAttachments,
         type: 'received',
         timestamp: new Date()
       });
