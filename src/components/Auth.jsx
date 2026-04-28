@@ -146,7 +146,7 @@ export default function Auth({ onAuthSuccess }) {
                   <div className="flex justify-between mb-1.5 ml-1">
                     <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
                     {mode === MODES.LOGIN && (
-                      <button type="button" onClick={() => setMode(MODES.FORGOT)} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Forgot?</button>
+                      <button type="button" onClick={() => setMode(MODES.FORGOT)} className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Forgot Password?</button>
                     )}
                   </div>
                   <input
