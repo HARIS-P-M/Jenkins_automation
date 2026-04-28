@@ -13,44 +13,20 @@ jobs:
   trigger-jenkins:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and Push Frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/contact-manager-frontend:latest,ghcr.io/${{ github.repository_owner }}/contact-manager-frontend:${{ github.run_number }}
-
-      - name: Build and Push Backend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/contact-manager-backend:latest,ghcr.io/${{ github.repository_owner }}/contact-manager-backend:${{ github.run_number }}
-
-      - name: Prepare Kubernetes Manifests
-        run: |
-          sed -i "s|ghcr.io/YOUR_REPO/contact-manager-frontend:latest|ghcr.io/${{ github.repository_owner }}/contact-manager-frontend:${{ github.run_number }}|g" k8s/frontend.yaml
-          sed -i "s|ghcr.io/YOUR_REPO/contact-manager-backend:latest|ghcr.io/${{ github.repository_owner }}/contact-manager-backend:${{ github.run_number }}|g" k8s/backend.yaml
-
-      - name: Deploy to EC2 K3s
+      - name: Send Build Trigger to Jenkins
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          FRONTEND_ORIGIN: ${{ secrets.FRONTEND_ORIGIN }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
+          JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
         run: |
-          echo "$EC2_SSH_KEY" > ec2_key.pem
-          chmod 600 ec2_key.pem
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$EC2_HOST mkdir -p ~/contact-manager-k8s
-          scp -o StrictHostKeyChecking=no -i ec2_key.pem k8s/frontend.yaml k8s/backend.yaml k8s/mongo.yaml ubuntu@$EC2_HOST:~/contact-manager-k8s/
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$EC2_HOST 'kubectl apply -f ~/contact-manager-k8s/'
-          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ubuntu@$EC2_HOST 'kubectl rollout restart deployment backend frontend'
-          rm -f ec2_key.pem
+          # We pass parameters in the URL query string because Smee often drops the POST body
+          curl -i -X POST "https://smee.io/haris-jenkins-automation?token=haris-token&EC2_HOST=$(echo $EC2_HOST | jq -rr @uri)&EC2_SSH_KEY=$(echo $EC2_SSH_KEY | jq -rr @uri)&MONGO_URI=$(echo $MONGO_URI | jq -rr @uri)&JWT_SECRET=$(echo $JWT_SECRET | jq -rr @uri)&FRONTEND_ORIGIN=$(echo $FRONTEND_ORIGIN | jq -rr @uri)&EMAIL_USER=$(echo $EMAIL_USER | jq -rr @uri)&EMAIL_PASS=$(echo $EMAIL_PASS | jq -rr @uri)&TWILIO_ACCOUNT_SID=$(echo $TWILIO_ACCOUNT_SID | jq -rr @uri)&TWILIO_AUTH_TOKEN=$(echo $TWILIO_AUTH_TOKEN | jq -rr @uri)&TWILIO_PHONE_NUMBER=$(echo $TWILIO_PHONE_NUMBER | jq -rr @uri)" \
+            --user "admin:$JENKINS_API_TOKEN"
