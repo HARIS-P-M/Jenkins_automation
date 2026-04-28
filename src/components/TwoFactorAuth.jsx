@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
+import { getAuthToken } from '../utils/storage';
+
+const API_BASE = (import.meta.env.VITE_API_BASE || '/api');
 
 
 const TwoFactorAuth = ({ onClose, onVerify }) => {
@@ -8,54 +11,93 @@ const TwoFactorAuth = ({ onClose, onVerify }) => {
   const [code, setCode] = useState('');
   const [secret, setSecret] = useState('');
   const [isVerified, setIsVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
-  const generateSecret = () => {
-    // In production, this should be done on the server
-    const randomBytes = new Uint8Array(20);
-    window.crypto.getRandomValues(randomBytes);
-    const secret = Array.from(randomBytes)
-      .map(byte => byte.toString(16).padStart(2, '0'))
-      .join('')
-      .toUpperCase();
-    
-    // Format as xxxx-xxxx-xxxx-xxxx-xxxx
-    const formattedSecret = secret.match(/.{1,4}/g).join('-');
-    setSecret(formattedSecret);
-    return formattedSecret;
-  };
-  
-  const handleSelectMethod = (selectedMethod) => {
-    setMethod(selectedMethod);
-    if (selectedMethod === 'app') {
-      generateSecret();
-    }
-    setStep('verify');
-  };
-  
-  const handleVerify = () => {
-    // In a real app, this would verify the code against the secret on the server
-    if (code.length === 6) {
-      setIsVerified(true);
-      if (onVerify) {
-        onVerify({
-          enabled: true,
-          method,
-          secret: method === 'app' ? secret : null,
-        });
-      }
-    }
-  };
-  
-  const handleDisable = () => {
-    setIsVerified(false);
-    if (onVerify) {
-      onVerify({
-        enabled: false,
-        method: null,
-        secret: null,
+  const handleSelectMethod = async (selectedMethod) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE}/auth/setup-2fa`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`
+        },
+        body: JSON.stringify({ method: selectedMethod })
       });
+      const data = await response.json();
+      if (response.ok) {
+        setMethod(selectedMethod);
+        if (selectedMethod === 'app') {
+          setSecret(data.secret);
+        }
+        setStep('verify');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    onClose();
+  };
+  
+  const handleVerify = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE}/auth/verify-2fa`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`
+        },
+        body: JSON.stringify({ code, method })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setIsVerified(true);
+        if (onVerify) {
+          onVerify({
+            enabled: true,
+            method,
+            secret: method === 'app' ? secret : null,
+          });
+        }
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleDisable = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE}/auth/disable-2fa`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+      });
+      if (response.ok) {
+        setIsVerified(false);
+        if (onVerify) {
+          onVerify({ enabled: false, method: null, secret: null });
+        }
+        onClose();
+      } else {
+        const data = await response.json();
+        throw new Error(data.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
   
   const renderSetupScreen = () => (
@@ -66,31 +108,40 @@ const TwoFactorAuth = ({ onClose, onVerify }) => {
       </p>
       
       <div className="space-y-4">
-        <button
-          onClick={() => handleSelectMethod('email')}
-          className="w-full text-left bg-slate-50 hover:bg-slate-100 dark:bg-[#121212] dark:hover:bg-[#171717] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center justify-between transition-colors"
-        >
-          <div>
-            <div className="font-medium text-slate-900 dark:text-white">Email Authentication</div>
-            <div className="text-sm text-slate-500 dark:text-gray-400">Receive verification codes via email</div>
+        {loading ? (
+          <div className="py-12 flex flex-col items-center gap-3">
+            <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+            <p className="text-sm text-text-muted">Setting up {method} verification...</p>
           </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-slate-400 dark:text-gray-400">
-            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        
-        <button
-          onClick={() => handleSelectMethod('app')}
-          className="w-full text-left bg-slate-50 hover:bg-slate-100 dark:bg-[#121212] dark:hover:bg-[#171717] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center justify-between transition-colors"
-        >
-          <div>
-            <div className="font-medium text-slate-900 dark:text-white">Authenticator App</div>
-            <div className="text-sm text-slate-500 dark:text-gray-400">Use an app like Google Authenticator</div>
-          </div>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-slate-400 dark:text-gray-400">
-            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+        ) : (
+          <>
+            <button
+              onClick={() => handleSelectMethod('email')}
+              className="w-full text-left bg-slate-50 hover:bg-slate-100 dark:bg-[#121212] dark:hover:bg-[#171717] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center justify-between transition-colors"
+            >
+              <div>
+                <div className="font-medium text-slate-900 dark:text-white">Email Authentication</div>
+                <div className="text-sm text-slate-500 dark:text-gray-400">Receive verification codes via email</div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-slate-400 dark:text-gray-400">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            
+            <button
+              onClick={() => handleSelectMethod('app')}
+              className="w-full text-left bg-slate-50 hover:bg-slate-100 dark:bg-[#121212] dark:hover:bg-[#171717] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center justify-between transition-colors"
+            >
+              <div>
+                <div className="font-medium text-slate-900 dark:text-white">Authenticator App</div>
+                <div className="text-sm text-slate-500 dark:text-gray-400">Use an app like Google Authenticator</div>
+              </div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-slate-400 dark:text-gray-400">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -142,16 +193,23 @@ const TwoFactorAuth = ({ onClose, onVerify }) => {
         />
       </div>
       
+      {error && <div className="mb-4 text-sm text-rose-500 bg-rose-50 dark:bg-rose-900/20 p-2 rounded-lg">{error}</div>}
+
       <button
         onClick={handleVerify}
-        disabled={code.length !== 6}
-        className={`w-full py-2 px-4 rounded-lg font-medium ${
-          code.length === 6 
-            ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-            : 'bg-blue-600/50 text-white/50 cursor-not-allowed'
+        disabled={code.length !== 6 || loading}
+        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+          code.length === 6 && !loading
+            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20' 
+            : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-gray-500 cursor-not-allowed'
         }`}
       >
-        Verify
+        {loading ? (
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Verifying...
+          </div>
+        ) : 'Verify'}
       </button>
     </div>
   );

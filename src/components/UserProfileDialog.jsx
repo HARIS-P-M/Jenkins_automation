@@ -80,37 +80,9 @@ export default function UserProfileDialog({ open, onClose }) {
   }
 
   const handle2FAUpdate = async (result) => {
-    // In a full implementation, this would call the /api/auth/verify-2fa endpoint.
-    // For now, we optimistically update the user state.
-    try {
-      if (result.enabled === false) {
-        await fetch(`${API_BASE}/auth/disable-2fa`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        })
-      } else {
-        await fetch(`${API_BASE}/auth/enable-2fa`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
-          body: JSON.stringify({ method: result.method })
-        })
-        await fetch(`${API_BASE}/auth/verify-2fa`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
-          body: JSON.stringify({ code: '123456', method: result.method }) // MOCK: The TwoFactorAuth component doesn't wait for API verification, it just verifies any 6 digit code locally
-        })
-      }
-      
-      setUser(prev => ({ ...prev, twoFactorEnabled: result.enabled }))
-    } catch (err) {
-      console.error('Failed to update 2FA status:', err)
-    }
+    // The TwoFactorAuth component now handles all API calls internally.
+    // We just need to update the local user state to reflect the change.
+    setUser(prev => ({ ...prev, twoFactorEnabled: result.enabled }))
   }
 
   if (!open) return null
