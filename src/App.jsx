@@ -594,12 +594,12 @@ export default function App() {
   }
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden">
+    <div className="h-full flex flex-col relative overflow-hidden transition-colors duration-300">
       {/* Search Bar - Floating Glassmorphic */}
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[90] w-[90%] max-w-2xl">
-        <div className="glass-card rounded-[1.5rem] p-1.5 flex items-center gap-2 shadow-2xl border-white/5 pr-4">
+        <div className="glass-card rounded-[1.5rem] p-1.5 flex items-center gap-2 shadow-2xl pr-4">
           <div className="flex-1 relative flex items-center ml-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" className="text-violet-400 absolute left-3">
+            <svg width="18" height="18" viewBox="0 0 24 24" className="text-violet-500 absolute left-3">
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.5" fill="none"/>
               <path d="M20 20l-3.2-3.2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
@@ -610,13 +610,13 @@ export default function App() {
                 if (advancedSearchParams) clearAdvancedSearch();
               }}
               placeholder={`Search ${contacts.length} contacts...`}
-              className="w-full bg-white/5 border-none rounded-xl pl-10 pr-4 py-2.5 outline-none text-sm font-medium placeholder:text-text-muted focus:bg-white/10 transition-all"
+              className="w-full bg-transparent border-none rounded-xl pl-10 pr-4 py-2.5 outline-none text-sm font-medium text-text-primary placeholder:text-text-muted focus:bg-black/5 dark:focus:bg-white/5 transition-all"
             />
           </div>
           
           <button 
             onClick={() => setShowAdvancedSearch(true)}
-            className={`p-2.5 rounded-xl transition-all ${advancedSearchParams ? 'bg-violet-500/20 text-violet-400' : 'text-text-muted hover:text-white hover:bg-white/5'}`}
+            className={`p-2.5 rounded-xl transition-all ${advancedSearchParams ? 'bg-violet-500/20 text-violet-500' : 'text-text-secondary hover:text-violet-500 hover:bg-black/5 dark:hover:bg-white/5'}`}
             title="Advanced Search"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
@@ -624,9 +624,9 @@ export default function App() {
         </div>
         
         {advancedSearchParams && (
-          <div className="mt-3 mx-4 px-4 py-2 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-violet-400 fade-in">
+          <div className="mt-3 mx-4 px-4 py-2 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-violet-500 fade-in">
             <span>Advanced Search Active</span>
-            <button onClick={clearAdvancedSearch} className="hover:text-white transition-colors">Clear</button>
+            <button onClick={clearAdvancedSearch} className="hover:text-text-primary transition-colors">Clear</button>
           </div>
         )}
       </div>
