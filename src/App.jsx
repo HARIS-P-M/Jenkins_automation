@@ -704,7 +704,7 @@ export default function App() {
       <ImportExportDialog open={showImportExport} onClose={() => setShowImportExport(false)} onImport={handleImportContacts} onExport={() => {}} contacts={contacts} />
       <CreateGroupDialog open={showCreateGroup} onClose={() => setShowCreateGroup(false)} onCreateGroup={handleCreateGroup} />
       <BirthdayRemindersDialog open={showBirthdayReminders} onClose={() => setShowBirthdayReminders(false)} contacts={contacts} onUpdateContact={handleUpdateContact} />
-      <ContactAnalytics open={showContactAnalytics} onClose={() => setShowContactAnalytics(false)} contacts={contacts} callHistory={callHistory} />
+      <ContactAnalytics open={showContactAnalytics} onClose={() => setShowContactAnalytics(false)} contacts={contacts} groups={groups} callHistory={callHistory} />
       <AdvancedSearchDialog open={showAdvancedSearch} onClose={() => setShowAdvancedSearch(false)} onSearch={handleAdvancedSearch} groups={groups} />
       
       {showEmailDialog && <EmailSender open={showEmailDialog} onClose={() => setShowEmailDialog(false)} initialRecipient={emailRecipient} />}
