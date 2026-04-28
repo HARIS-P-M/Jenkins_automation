@@ -594,94 +594,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden transition-colors duration-300">
-      {/* Search Bar - Floating Glassmorphic */}
-      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[90] w-[90%] max-w-2xl">
-        <div className="glass-card rounded-[1.5rem] p-1.5 flex items-center gap-2 shadow-2xl pr-4">
-          <div className="flex-1 relative flex items-center ml-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" className="text-violet-500 absolute left-3">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.5" fill="none"/>
-              <path d="M20 20l-3.2-3.2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
-            <input
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                if (advancedSearchParams) clearAdvancedSearch();
-              }}
-              placeholder={`Search ${contacts.length} contacts...`}
-              className="w-full bg-transparent border-none rounded-xl pl-10 pr-4 py-2.5 outline-none text-sm font-medium text-text-primary placeholder:text-text-muted focus:bg-black/5 dark:focus:bg-white/5 transition-all"
-            />
-          </div>
-          
-          <button 
-            onClick={() => setShowAdvancedSearch(true)}
-            className={`p-2.5 rounded-xl transition-all ${advancedSearchParams ? 'bg-violet-500/20 text-violet-500' : 'text-text-secondary hover:text-violet-500 hover:bg-black/5 dark:hover:bg-white/5'}`}
-            title="Advanced Search"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
-          </button>
-        </div>
-        
-        {advancedSearchParams && (
-          <div className="mt-3 mx-4 px-4 py-2 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-violet-500 fade-in">
-            <span>Advanced Search Active</span>
-            <button onClick={clearAdvancedSearch} className="hover:text-text-primary transition-colors">Clear</button>
-          </div>
-        )}
-      </div>
-
-      <main className="flex-1 overflow-y-auto pt-44 safe-area-bottom scroll-smooth">
-        {activeTab === TABS.CONTACTS && (
-          <ContactsList
-            contacts={filteredContacts}
-            query={query}
-            onEdit={handleEditContact}
-            onDelete={requestDelete}
-            onDial={handleDial}
-            onEmail={handleEmail}
-            onSMS={handleSMS}
-            onToggleFavorite={toggleFavorite}
-            groups={groups}
-            selectedGroup={selectedGroup}
-            onSelectGroup={handleSelectGroup}
-            onCreateGroup={handleCreateGroup}
-            onDeleteGroup={handleDeleteGroup}
-            onEditGroup={handleUpdateGroup}
-          />
-        )}
-
-        {activeTab === TABS.ADD && (
-          <div className="pt-24 px-4 pb-32 max-w-2xl mx-auto">
-            <AddContact onCancel={() => setActiveTab(TABS.CONTACTS)} onSave={handleAddContact} allGroups={groups} />
-          </div>
-        )}
-
-        {activeTab === TABS.EDIT && editingContact && (
-          <div className="pt-24 px-4 pb-32 max-w-2xl mx-auto">
-            <EditContact contact={editingContact} onCancel={() => { setEditingContact(null); setActiveTab(TABS.CONTACTS); }} onSave={handleUpdateContact} allGroups={groups} />
-          </div>
-        )}
-
-        {activeTab === TABS.HISTORY && (
-          <div className="pt-24">
-            <CallHistory callHistory={callHistory} contacts={contacts} onDial={handleDial} onOpenDetails={openEditFromDetails} onToggleFavorite={toggleFavorite} />
-          </div>
-        )}
-        
-        {activeTab === TABS.EMAIL_INBOX && (
-          <div className="pt-24">
-            <EmailInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(to) => { setEmailRecipient(to); setShowEmailDialog(true); }} onMessageRead={fetchUnreadCounts} />
-          </div>
-        )}
-        
-        {activeTab === TABS.SMS_INBOX && (
-          <div className="pt-24">
-            <SMSInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(phone, name) => { setSMSRecipient({ phone, name }); setShowSMSDialog(true); }} onMessageRead={fetchUnreadCounts} />
-          </div>
-        )}
-      </main>
-
+    <div className="min-h-screen flex flex-col transition-colors duration-200">
       <Navbar
         active={activeTab}
         onChange={setActiveTab}
@@ -695,8 +608,113 @@ export default function App() {
         unreadSMSCount={unreadSMSCount}
       />
 
+      <main className="flex-1 flex flex-col max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+        {/* Page Content Header with Search */}
+        <div className="py-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">
+              {activeTab === TABS.CONTACTS && 'My Contacts'}
+              {activeTab === TABS.ADD && 'Add New Contact'}
+              {activeTab === TABS.EDIT && 'Edit Contact'}
+              {activeTab === TABS.HISTORY && 'Recent Activity'}
+              {activeTab === TABS.EMAIL_INBOX && 'Email Inbox'}
+              {activeTab === TABS.SMS_INBOX && 'Message Inbox'}
+            </h1>
+            <p className="text-sm text-text-secondary mt-1">
+              {activeTab === TABS.CONTACTS && `You have ${contacts.length} contacts saved.`}
+            </p>
+          </div>
+
+          {activeTab === TABS.CONTACTS && (
+            <div className="flex items-center gap-2 w-full md:w-auto max-w-md">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); if (advancedSearchParams) clearAdvancedSearch(); }}
+                  placeholder="Search contacts..."
+                  className="input-field pl-10"
+                />
+              </div>
+              <button 
+                onClick={() => setShowAdvancedSearch(true)}
+                className={`p-2.5 rounded-lg border border-border-subtle hover:bg-bg-hover transition-colors ${advancedSearchParams ? 'text-indigo-600 border-indigo-600/30 bg-indigo-50 dark:bg-indigo-900/10' : 'text-text-secondary'}`}
+                title="Advanced Search"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {advancedSearchParams && (
+          <div className="mb-6 p-3 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/30 rounded-lg flex items-center justify-between text-xs font-medium text-indigo-700 dark:text-indigo-400">
+            <span className="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              Advanced Search Active
+            </span>
+            <button onClick={clearAdvancedSearch} className="hover:underline">Clear Filters</button>
+          </div>
+        )}
+
+        {/* View Content */}
+        <div className="flex-1 animate-slide-up">
+          {activeTab === TABS.CONTACTS && (
+            <ContactsList
+              contacts={filteredContacts}
+              query={query}
+              onEdit={handleEditContact}
+              onDelete={requestDelete}
+              onDial={handleDial}
+              onEmail={handleEmail}
+              onSMS={handleSMS}
+              onToggleFavorite={toggleFavorite}
+              groups={groups}
+              selectedGroup={selectedGroup}
+              onSelectGroup={handleSelectGroup}
+              onCreateGroup={handleCreateGroup}
+              onDeleteGroup={handleDeleteGroup}
+              onEditGroup={handleUpdateGroup}
+            />
+          )}
+
+          {activeTab === TABS.ADD && (
+            <div className="max-w-2xl">
+              <AddContact onCancel={() => setActiveTab(TABS.CONTACTS)} onSave={handleAddContact} allGroups={groups} />
+            </div>
+          )}
+
+          {activeTab === TABS.EDIT && editingContact && (
+            <div className="max-w-2xl">
+              <EditContact contact={editingContact} onCancel={() => { setEditingContact(null); setActiveTab(TABS.CONTACTS); }} onSave={handleUpdateContact} allGroups={groups} />
+            </div>
+          )}
+
+          {activeTab === TABS.HISTORY && (
+            <CallHistory callHistory={callHistory} contacts={contacts} onDial={handleDial} onOpenDetails={openEditFromDetails} onToggleFavorite={toggleFavorite} />
+          )}
+          
+          {activeTab === TABS.EMAIL_INBOX && (
+            <EmailInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(to) => { setEmailRecipient(to); setShowEmailDialog(true); }} onMessageRead={fetchUnreadCounts} />
+          )}
+          
+          {activeTab === TABS.SMS_INBOX && (
+            <SMSInbox onClose={() => setActiveTab(TABS.CONTACTS)} onReply={(phone, name) => { setSMSRecipient({ phone, name }); setShowSMSDialog(true); }} onMessageRead={fetchUnreadCounts} />
+          )}
+        </div>
+      </main>
+
       {activeTab !== TABS.ADD && activeTab !== TABS.HISTORY && (
-        <FAB ariaLabel="Add contact" onClick={() => setActiveTab(TABS.ADD)} />
+        <button 
+          onClick={() => setActiveTab(TABS.ADD)}
+          className="fixed bottom-24 right-6 md:bottom-12 md:right-12 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all z-40 flex items-center justify-center"
+          aria-label="Add Contact"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
       )}
 
       <ConfirmDialog open={!!pendingDelete} title="Delete Contact" description={`Are you sure you want to delete ${pendingDelete?.name}? This action is permanent.`} confirmText="Delete" cancelText="Cancel" onConfirm={confirmDelete} onCancel={cancelDelete} />

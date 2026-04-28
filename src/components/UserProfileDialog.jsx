@@ -1,182 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '../utils/storage';
+import React, { useState, useEffect } from 'react'
+import { getAuthToken, clearAuthToken } from '../utils/storage'
 
-const API_BASE = (import.meta.env.VITE_API_BASE || '/api');
+const API_BASE = (import.meta.env.VITE_API_BASE || '/api')
 
 export default function UserProfileDialog({ open, onClose }) {
-  const [loading, setLoading] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
-  const [error, setError] = useState('');
-  const [name, setName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [editMode, setEditMode] = useState(false);
-  
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [editMode, setEditMode] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    mobileNumber: '',
+    recoveryEmail: ''
+  })
+
   useEffect(() => {
     if (open) {
-      fetchUserProfile();
+      fetchProfile()
     }
-  }, [open]);
-  
-  const fetchUserProfile = async () => {
-    setLoading(true);
-    setError('');
-    
+  }, [open])
+
+  const fetchProfile = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) throw new Error('Not authenticated');
-      
       const response = await fetch(`${API_BASE}/user/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch profile');
-      
-      const data = await response.json();
-      setUserProfile(data);
-      setName(data.name || '');
-      setMobileNumber(data.mobileNumber || '');
-      setRecoveryEmail(data.recoveryEmail || '');
+        headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setUser(data)
+        setFormData({
+          name: data.name || '',
+          mobileNumber: data.mobileNumber || '',
+          recoveryEmail: data.recoveryEmail || ''
+        })
+      }
     } catch (err) {
-      setError(err.message);
+      setError('Failed to load profile')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-  
-  const handleSaveProfile = async () => {
-    setLoading(true);
+  }
+
+  const handleUpdate = async (e) => {
+    e.preventDefault()
+    setSaving(true)
     try {
-      const token = getAuthToken();
       const response = await fetch(`${API_BASE}/user/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${getAuthToken()}`
         },
-        body: JSON.stringify({ name, mobileNumber, recoveryEmail })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update profile');
+        body: JSON.stringify(formData)
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setUser(data)
+        setEditMode(false)
+        if (window.onUserUpdate) window.onUserUpdate(data)
+      } else {
+        throw new Error(data.error)
       }
-      
-      const updatedProfile = await response.json();
-      setUserProfile(updatedProfile);
-      setEditMode(false);
-      // Update global user state if needed
-      if (window.onUserUpdate) window.onUserUpdate(updatedProfile);
     } catch (err) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setLoading(false);
+      setSaving(false)
     }
-  };
-  
-  if (!open) return null;
-  
+  }
+
+  const handleLogout = () => {
+    clearAuthToken()
+    window.location.reload()
+  }
+
+  if (!open) return null
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="w-full max-w-lg glass-card rounded-[2.5rem] p-8 md:p-10 relative z-10 fade-in overflow-hidden">
-        {/* Background Decorative Glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-600/20 rounded-full blur-[80px]" />
-        
-        <div className="flex justify-between items-center mb-10">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-1">Your Profile</h2>
-            <p className="text-text-secondary text-sm">Manage your account details and security</p>
-          </div>
-          <button onClick={onClose} className="p-3 hover:bg-white/5 rounded-full transition-colors text-text-muted hover:text-white">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+          <h2 className="text-lg font-bold text-text-primary">User Profile</h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors text-text-muted">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        
-        {error && (
-          <div className="mb-8 p-4 bg-pink-500/10 border border-pink-500/20 rounded-2xl text-pink-400 text-sm flex items-center gap-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {error}
-          </div>
-        )}
-        
-        {loading && !userProfile ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mb-4" />
-            <p className="text-text-secondary font-medium">Loading your profile...</p>
-          </div>
-        ) : userProfile && (
-          <div className="space-y-8">
-            <div className="flex flex-col md:flex-row items-center gap-8 p-6 bg-white/5 rounded-3xl border border-white/5">
-               <div className="relative group">
-                <div className="h-24 w-24 rounded-[2rem] bg-gradient-to-br from-violet-500 to-pink-500 p-[2px] shadow-xl shadow-violet-500/20">
-                  <div className="h-full w-full bg-[#0a0a0a] rounded-[1.9rem] flex items-center justify-center overflow-hidden">
-                    <span className="text-3xl font-bold text-white uppercase">{userProfile.name?.[0] || userProfile.email?.[0]}</span>
+
+        <div className="p-6">
+          {loading ? (
+            <div className="py-12 flex justify-center"><div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" /></div>
+          ) : (
+            <div className="space-y-6">
+              {/* Profile Header */}
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-lg shadow-indigo-600/20">
+                  {user?.name?.[0] || 'U'}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-text-primary">{user?.name}</h3>
+                  <p className="text-sm text-text-muted">{user?.email}</p>
+                </div>
+              </div>
+
+              {editMode ? (
+                <form onSubmit={handleUpdate} className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-1.5">Full Name</label>
+                    <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-field" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-1.5">Mobile Number</label>
+                    <input type="tel" value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} className="input-field" placeholder="+1 234 567 890" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-text-muted mb-1.5">Recovery Email</label>
+                    <input type="email" value={formData.recoveryEmail} onChange={e => setFormData({...formData, recoveryEmail: e.target.value})} className="input-field" placeholder="backup@email.com" />
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setEditMode(false)} className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                    <button type="submit" disabled={saving} className="flex-1 btn-primary">{saving ? 'Saving...' : 'Save Changes'}</button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Mobile</p>
+                      <p className="text-sm font-medium text-text-primary">{user?.mobileNumber || 'Not provided'}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Recovery Email</p>
+                      <p className="text-sm font-medium text-text-primary truncate">{user?.recoveryEmail || 'Not provided'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <button onClick={() => setEditMode(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Edit Profile Information
+                    </button>
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-bold rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Sign Out
+                    </button>
                   </div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 h-8 w-8 bg-emerald-500 border-4 border-[#0a0a0a] rounded-full" />
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-xl font-bold mb-1">{userProfile.name || 'Anonymous User'}</h3>
-                <p className="text-text-secondary text-sm font-medium">{userProfile.email}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ProfileItem label="Display Name" value={name} icon={<UserIcon />} isEdit={editMode} onChange={setName} />
-              <ProfileItem label="Recovery Email" value={recoveryEmail} icon={<MailIcon />} isEdit={editMode} onChange={setRecoveryEmail} />
-              <ProfileItem label="Mobile Number" value={mobileNumber} icon={<PhoneIcon />} isEdit={editMode} onChange={setMobileNumber} />
-              <ProfileItem label="Account Type" value="Premium Member" icon={<StarIcon />} isEdit={false} />
-            </div>
-
-            <div className="pt-8 flex flex-col sm:flex-row gap-4 border-t border-white/5">
-              {editMode ? (
-                <>
-                  <button onClick={() => setEditMode(false)} className="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 rounded-2xl font-bold transition-all">Cancel</button>
-                  <button onClick={handleSaveProfile} className="flex-1 premium-button px-6 py-4 rounded-2xl font-bold shadow-lg shadow-violet-500/20">{loading ? 'Saving...' : 'Save Changes'}</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={window.handleLogout} className="flex-1 px-6 py-4 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 rounded-2xl font-bold transition-all">Logout</button>
-                  <button onClick={() => setEditMode(true)} className="flex-1 premium-button px-6 py-4 rounded-2xl font-bold shadow-lg shadow-violet-500/20">Edit Profile</button>
-                </>
               )}
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ProfileItem({ label, value, icon, isEdit, onChange }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-text-muted ml-1">
-        {React.cloneElement(icon, { size: 14, className: 'opacity-70' })}
-        <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
-      </div>
-      {isEdit ? (
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="input-field"
-          placeholder={`Enter ${label.toLowerCase()}`}
-        />
-      ) : (
-        <div className="px-4 py-3 bg-white/5 border border-white/5 rounded-2xl font-medium text-sm text-text-primary min-h-[46px] flex items-center">
-          {value || <span className="text-text-muted italic text-xs">Not provided</span>}
+          )}
         </div>
-      )}
+      </div>
     </div>
-  );
+  )
 }
-
-const UserIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
-const MailIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
-const PhoneIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
-const StarIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;

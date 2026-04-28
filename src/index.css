@@ -7,43 +7,44 @@
 :root {
   --font-sans: 'Inter', sans-serif;
   
-  /* Shared tokens */
-  --accent-primary: #8B5CF6;
-  --accent-secondary: #EC4899;
-  --accent-gradient: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
-  --radius-xl: 1.5rem;
-  --radius-lg: 1rem;
+  /* Modern Professional Palette */
+  --accent-primary: #6366f1; /* Indigo-500 */
+  --accent-secondary: #4f46e5;
+  --radius-xl: 1rem;
+  --radius-lg: 0.75rem;
 }
 
-/* Light Theme Variables */
+/* Light Theme */
 :root, .light {
-  --bg-main: #F9FAFB;
-  --bg-card: rgba(255, 255, 255, 0.8);
-  --bg-glass: rgba(255, 255, 255, 0.6);
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
-  --text-muted: #9CA3AF;
-  --border-glass: rgba(0, 0, 0, 0.05);
-  --shadow-premium: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-hover: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-subtle: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   --nav-bg: rgba(255, 255, 255, 0.8);
 }
 
-/* Dark Theme Variables */
+/* Dark Theme */
 .dark {
-  --bg-main: #050505;
-  --bg-card: rgba(18, 18, 18, 0.7);
-  --bg-glass: rgba(20, 20, 20, 0.5);
-  --text-primary: #FFFFFF;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --shadow-premium: 0 25px 50px rgba(0, 0, 0, 0.5);
-  --nav-bg: rgba(10, 10, 10, 0.8);
+  --bg-main: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-hover: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: #334155;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+  --nav-bg: rgba(15, 23, 42, 0.8);
 }
 
 @layer base {
   body {
-    @apply antialiased transition-colors duration-300;
+    @apply antialiased transition-colors duration-200;
     background-color: var(--bg-main);
     color: var(--text-primary);
     font-family: var(--font-sans);
@@ -52,57 +53,47 @@
 }
 
 @layer components {
-  .glass-card {
-    @apply backdrop-blur-xl border transition-all duration-300;
-    background: var(--bg-glass);
-    border-color: var(--border-glass);
-    box-shadow: var(--shadow-premium);
+  .surface-card {
+    @apply transition-all duration-200 border;
+    background-color: var(--bg-surface);
+    border-color: var(--border-subtle);
+    box-shadow: var(--shadow-sm);
   }
 
-  .premium-button {
-    @apply relative overflow-hidden transition-all duration-300 active:scale-95 disabled:opacity-50;
-    background: var(--accent-gradient);
-    border-radius: var(--radius-lg);
-    color: white;
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all active:scale-[0.98] disabled:opacity-50;
   }
 
   .input-field {
-    @apply w-full border transition-all duration-200 outline-none;
-    background: var(--bg-glass);
-    border-color: var(--border-glass);
-    border-radius: var(--radius-lg);
+    @apply w-full px-4 py-2 border outline-none transition-all duration-200 rounded-lg;
+    background-color: var(--bg-surface);
+    border-color: var(--border-subtle);
     color: var(--text-primary);
   }
   
   .input-field:focus {
-    border-color: var(--accent-primary);
-    background: var(--bg-card);
+    @apply ring-2 ring-indigo-500/20 border-indigo-500;
   }
 
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-500 to-pink-500;
+  .nav-blur {
+    @apply backdrop-blur-md sticky top-0 z-50 border-b;
+    background-color: var(--nav-bg);
+    border-color: var(--border-subtle);
   }
 }
 
-/* Global Utility Classes to use the variables */
-.text-text-primary { color: var(--text-primary); }
-.text-text-secondary { color: var(--text-secondary); }
-.text-text-muted { color: var(--text-muted); }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+/* Scrollbar Fixes */
+::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { 
-  background: var(--text-muted); 
-  border-radius: 10px;
-  opacity: 0.3;
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
 }

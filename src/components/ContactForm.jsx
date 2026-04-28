@@ -19,7 +19,6 @@ export default function ContactForm({
   const [birthday, setBirthday] = useState(initial.birthday ? formatDateForInput(initial.birthday) : '')
   const [notes, setNotes] = useState(initial.notes || '')
   
-  // Format date for input field (YYYY-MM-DD)
   function formatDateForInput(dateStr) {
     const date = new Date(dateStr)
     return date && !isNaN(date.getTime())
@@ -50,120 +49,104 @@ export default function ContactForm({
   }
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className="px-4 pt-3 pb-6 space-y-5 max-w-md mx-auto w-full">
-      <div className="rounded-2xl p-4 sm:p-5 border border-white/10 bg-[#111] shadow-lg space-y-5">
-        <AvatarPicker value={avatar} onChange={setAvatar} />
-
-        <div className="space-y-2">
-          <label className="text-sm text-gray-300">Name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Full name"
-            className="w-full bg-[#1b1b1b] text-white border border-white/10 rounded-xl px-3 py-3 outline-none focus:border-emerald-500 transition-colors placeholder:text-gray-500"
-            required
-          />
+    <form id={formId} onSubmit={handleSubmit} className="space-y-6">
+      <div className="surface-card rounded-2xl p-6 shadow-sm">
+        <div className="flex flex-col items-center mb-8">
+           <AvatarPicker value={avatar} onChange={setAvatar} />
+           <p className="text-xs text-text-muted mt-2 uppercase font-bold tracking-widest">Profile Picture</p>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-gray-300">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@example.com"
-            className="w-full bg-[#1b1b1b] text-white border border-white/10 rounded-xl px-3 py-3 outline-none focus:border-emerald-500 transition-colors placeholder:text-gray-500"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm text-gray-300">Phone numbers</label>
-          <div className="bg-[#1b1b1b] border border-white/10 rounded-xl p-3">
-            <PhoneNumbersInput phones={phones} onChange={setPhones} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text-secondary">Full Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Alexander Graham Bell"
+              className="input-field"
+              required
+            />
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-300">Groups</label>
-            {allGroups.length > 0 && (
-              <span className="text-xs text-gray-400">
-                {selectedGroups.length} selected
-              </span>
-            )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text-secondary">Email Address</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@company.com"
+              className="input-field"
+            />
           </div>
-          <div className="bg-[#1b1b1b] border border-white/10 rounded-xl p-3">
-            {allGroups.length === 0 ? (
-              <div className="text-center py-3">
-                <p className="text-sm text-gray-500 mb-3">No groups available</p>
-                <button
-                  type="button"
-                  onClick={() => window.createNewGroup && window.createNewGroup()}
-                  className="px-3 py-1.5 rounded-lg text-sm bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-                >
-                  Create your first group
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {allGroups.map(group => (
-                    <button 
-                      key={group.id} 
-                      type="button"
-                      onClick={() => toggleGroup(group.id)}
-                      className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                        selectedGroups.includes(group.id) 
-                          ? 'bg-emerald-500 text-white' 
-                          : 'bg-[#2a2a2a] text-gray-300 hover:bg-[#333]'
-                      }`}
-                    >
-                      {group.name}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex justify-end mt-2">
-                  <button
+
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-semibold text-text-secondary">Phone Numbers</label>
+            <div className="bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl p-4">
+              <PhoneNumbersInput phones={phones} onChange={setPhones} />
+            </div>
+          </div>
+          
+          <div className="space-y-2 md:col-span-2">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-semibold text-text-secondary">Group Assignments</label>
+              <button
+                type="button"
+                onClick={() => window.createNewGroup?.()}
+                className="text-xs font-bold text-indigo-600 hover:underline"
+              >
+                + New Group
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 border border-border-subtle rounded-xl">
+              {allGroups.length === 0 ? (
+                <p className="text-xs text-text-muted italic w-full text-center py-2">No groups created yet</p>
+              ) : (
+                allGroups.map(group => (
+                  <button 
+                    key={group.id} 
                     type="button"
-                    onClick={() => window.createNewGroup && window.createNewGroup()}
-                    className="text-xs text-emerald-400 hover:underline"
+                    onClick={() => toggleGroup(group.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      selectedGroups.includes(group.id) 
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' 
+                        : 'bg-white dark:bg-slate-800 border border-border-subtle text-text-secondary hover:bg-slate-100 dark:hover:bg-slate-700'
+                    }`}
                   >
-                    + Add New Group
+                    {group.name}
                   </button>
-                </div>
-              </>
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="text-sm text-gray-300">Birthday</label>
-          <input
-            type="date"
-            value={birthday}
-            onChange={(e) => setBirthday(e.target.value)}
-            className="w-full bg-[#1b1b1b] text-white border border-white/10 rounded-xl px-3 py-3 outline-none focus:border-emerald-500 transition-colors"
-          />
-          <p className="text-xs text-gray-500">Birthday reminders will be shown for upcoming birthdays</p>
-        </div>
-        
-        <div className="space-y-2">
-          <label className="text-sm text-gray-300">Notes</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add personal notes about this contact"
-            className="w-full bg-[#1b1b1b] text-white border border-white/10 rounded-xl px-3 py-3 outline-none focus:border-emerald-500 transition-colors placeholder:text-gray-500 min-h-[100px] resize-y"
-          />
+          
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-text-secondary">Date of Birth</label>
+            <input
+              type="date"
+              value={birthday}
+              onChange={(e) => setBirthday(e.target.value)}
+              className="input-field"
+            />
+          </div>
+          
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-semibold text-text-secondary">Additional Notes</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any context or notes here..."
+              className="input-field min-h-[120px] resize-none"
+            />
+          </div>
         </div>
       </div>
 
       {showFooter && (
-        <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onCancel} className="flex-1 h-12 rounded-xl border border-white/15 text-gray-300 active:scale-[0.98]">
+        <div className="flex items-center justify-end gap-3">
+          <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-lg border border-border-subtle font-semibold text-text-secondary hover:bg-bg-hover transition-all">
             Cancel
           </button>
-          <button type="submit" className="flex-1 h-12 rounded-xl bg-emerald-500 text-white active:scale-[0.98]">
+          <button type="submit" className="px-8 py-2.5 btn-primary font-bold shadow-lg shadow-indigo-600/20">
             {submitLabel}
           </button>
         </div>
