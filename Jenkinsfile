@@ -44,13 +44,23 @@ pipeline {
 
         stage('Build & Push Images') {
             steps {
-                sh "docker build -t ${REGISTRY}/${REPO}/contact-manager-frontend:latest -t ${REGISTRY}/${REPO}/contact-manager-frontend:${TAG} ."
-                sh "docker push ${REGISTRY}/${REPO}/contact-manager-frontend:latest"
-                sh "docker push ${REGISTRY}/${REPO}/contact-manager-frontend:${TAG}"
+                sh """
+                    docker build -t ${REGISTRY}/${REPO}/contact-manager-frontend:latest -t ${REGISTRY}/${REPO}/contact-manager-frontend:${TAG} .
+                    for i in 1 2 3; do
+                        docker push ${REGISTRY}/${REPO}/contact-manager-frontend:latest && \
+                        docker push ${REGISTRY}/${REPO}/contact-manager-frontend:${TAG} && break
+                        echo "Push attempt \$i failed, retrying in 10s..."
+                        sleep 10
+                    done
 
-                sh "docker build -t ${REGISTRY}/${REPO}/contact-manager-backend:latest -t ${REGISTRY}/${REPO}/contact-manager-backend:${TAG} ./backend"
-                sh "docker push ${REGISTRY}/${REPO}/contact-manager-backend:latest"
-                sh "docker push ${REGISTRY}/${REPO}/contact-manager-backend:${TAG}"
+                    docker build -t ${REGISTRY}/${REPO}/contact-manager-backend:latest -t ${REGISTRY}/${REPO}/contact-manager-backend:${TAG} ./backend
+                    for i in 1 2 3; do
+                        docker push ${REGISTRY}/${REPO}/contact-manager-backend:latest && \
+                        docker push ${REGISTRY}/${REPO}/contact-manager-backend:${TAG} && break
+                        echo "Push attempt \$i failed, retrying in 10s..."
+                        sleep 10
+                    done
+                """
             }
         }
 
