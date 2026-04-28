@@ -711,7 +711,7 @@ export default function App() {
       <AdvancedSearchDialog open={showAdvancedSearch} onClose={() => setShowAdvancedSearch(false)} onSearch={handleAdvancedSearch} groups={groups} />
       
       {showEmailDialog && <EmailSender open={showEmailDialog} onClose={() => setShowEmailDialog(false)} initialRecipient={emailRecipient} />}
-      {showSMSDialog && <SMSSender open={showSMSDialog} onClose={() => setShowSMSDialog(false)} initialPhone={smsRecipient.phone} initialName={smsRecipient.name} />}
+      {showSMSDialog && <SMSSender open={showSMSDialog} onClose={() => setShowSMSDialog(false)} recipient={smsRecipient.phone} recipientName={smsRecipient.name} />}
     </div>
   )
 }
