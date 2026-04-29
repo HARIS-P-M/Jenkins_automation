@@ -40,7 +40,7 @@ const io = new Server(httpServer, {
   },
   pingTimeout: 60000,
   pingInterval: 25000,
-  transports: ['websocket', 'polling'] // Enable all transport methods
+  transports: ['websocket', 'polling']
 })
 
 app.use(cors({
@@ -374,10 +374,10 @@ app.post('/api/auth/login', async (req, res) => {
         }
       }
 
-      return res.json({ 
-        twoFactorRequired: true, 
+      return res.json({
+        twoFactorRequired: true,
         method: user.twoFactorMethod,
-        userId: user._id 
+        userId: user._id
       })
     }
 
@@ -411,13 +411,13 @@ app.post('/api/auth/setup-2fa', authMiddleware, async (req, res) => {
     user.twoFactorMethod = method
     user.twoFactorSecret = secret
     user.twoFactorEnabled = false
-    
+
     // If email method, send the initial verification code
     if (method === 'email') {
       const otp = Math.floor(100000 + Math.random() * 900000).toString()
       user.twoFactorOtp = otp
       user.twoFactorOtpExpires = Date.now() + 600000 // 10 mins
-      
+
       const isDemoMode = DEMO_MODE || EMAIL_USER === 'your_email@gmail.com'
       if (isDemoMode) {
         console.log(`[2FA SETUP] OTP for ${user.email} is: ${otp}`)
@@ -441,7 +441,7 @@ app.post('/api/auth/setup-2fa', authMiddleware, async (req, res) => {
         })
       }
     }
-    
+
     await user.save()
     res.json({ success: true, method, secret })
   } catch (e) {
@@ -473,7 +473,7 @@ app.post('/api/auth/verify-2fa', authMiddleware, async (req, res) => {
       // For app-based, we'll keep it simple for now, but in a real app
       // you'd use something like 'otplib' to verify against user.twoFactorSecret
       if (code !== '123456' && process.env.NODE_ENV === 'production') {
-         // In production we'd have a real check, but for this dev task let's allow 123456
+        // In production we'd have a real check, but for this dev task let's allow 123456
       }
     }
 
@@ -513,8 +513,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const { email } = req.body
     if (!email) return res.status(400).json({ error: 'Email is required' })
 
-    const user = await User.findOne({ 
-      $or: [{ email: email }, { recoveryEmail: email }] 
+    const user = await User.findOne({
+      $or: [{ email: email }, { recoveryEmail: email }]
     })
 
     if (!user) {
@@ -532,7 +532,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     // Send Email
     const isDemoMode = DEMO_MODE || EMAIL_USER === 'your_email@gmail.com'
-    
+
     if (isDemoMode) {
       console.log(`[FORGOT PASSWORD] Reset link for ${user.email} is: ${resetUrl}`)
     } else {
@@ -593,7 +593,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Email, token and new password are required' })
     }
 
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       $or: [{ email: email }, { recoveryEmail: email }],
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() }
@@ -1086,10 +1086,10 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
     const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
     const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER
 
-    const isTwilioConfigured = TWILIO_ACCOUNT_SID && 
-                             TWILIO_AUTH_TOKEN && 
-                             TWILIO_PHONE_NUMBER && 
-                             !TWILIO_ACCOUNT_SID.includes('your_')
+    const isTwilioConfigured = TWILIO_ACCOUNT_SID &&
+      TWILIO_AUTH_TOKEN &&
+      TWILIO_PHONE_NUMBER &&
+      !TWILIO_ACCOUNT_SID.includes('your_')
 
     const fromNumber = user.mobileNumber || user.email || 'System'
 
@@ -1117,8 +1117,8 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
           timestamp: new Date()
         })
 
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           message: 'SMS logged in demo mode',
           id: sentMsg._id
         })
@@ -1134,7 +1134,7 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
       // Twilio package usually has a default export that is the client factory
       const TwilioClient = twilio.default || twilio
       const client = typeof TwilioClient === 'function' ? TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN) : new TwilioClient.RestClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-      
+
       const twilioRes = await client.messages.create({
         body: String(message),
         from: String(TWILIO_PHONE_NUMBER).startsWith('+') ? String(TWILIO_PHONE_NUMBER) : `+${TWILIO_PHONE_NUMBER}`,
@@ -1159,7 +1159,7 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
       res.json({ success: true, message: 'SMS sent via Twilio', sid: twilioRes.sid, id: msgId })
     } catch (err) {
       console.error('Twilio critical failure:', err.message, 'Code:', err.code)
-      
+
       // Fallback to demo mode for ALL Twilio errors to keep the app working for the user
       console.log('FALLING BACK TO DEMO MODE due to Twilio error');
       try {
@@ -1171,17 +1171,17 @@ app.post('/api/send-sms', authMiddleware, async (req, res) => {
           type: 'sent',
           timestamp: new Date()
         })
-        return res.json({ 
-          success: true, 
+        return res.json({
+          success: true,
           message: 'SMS logged in demo mode (Twilio configuration failed)',
           warning: err.message,
           id: sentMsg._id
         })
       } catch (dbErr) {
         console.error('DB Fallback also failed:', dbErr.message);
-        return res.status(400).json({ 
-          error: 'Twilio failed and DB fallback failed', 
-          details: err.message 
+        return res.status(400).json({
+          error: 'Twilio failed and DB fallback failed',
+          details: err.message
         })
       }
     }
