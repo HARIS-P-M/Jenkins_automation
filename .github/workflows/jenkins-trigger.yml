@@ -27,21 +27,14 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           
-          # Commit and push the change so Jenkins pulls the file with the REAL IP
+          # Commit and push so Jenkins checks out the file with the REAL IP
           git add Jenkinsfile
-          git commit -m "Inject EC2 IP for deployment [skip ci]" || echo "No changes to commit"
+          git commit -m "ci: inject EC2 IP for deployment [skip ci]" || echo "No changes to commit"
           git push origin main
 
-      - name: Trigger Jenkins Build
-        env:
-          JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
-          JENKINS_URL: ${{ secrets.JENKINS_URL }}
+      - name: Notify (Jenkins triggered via GitHub Webhook + Smee)
         run: |
-          # Trigger Jenkins job via its Remote Build Trigger API
-          # JENKINS_URL secret should be your public Jenkins URL, e.g.:
-          #   http://<your-ngrok-or-smee-forwarded-host>/job/contact-manager/build?token=<REMOTE_TOKEN>
-          # Or if using user:apitoken auth:
-          curl -i -X POST "${JENKINS_URL}/job/contact-manager-final/build" \
-            --user "admin:${JENKINS_API_TOKEN}" \
-            --data-urlencode "json={}" \
-            -f || echo "Jenkins trigger failed — check JENKINS_URL secret and that Jenkins is reachable"
+          echo "✅ Code pushed to main."
+          echo "Jenkins is triggered automatically via GitHub Webhook → Smee.io → localhost:8080"
+          echo "Make sure smee-client is running on your local machine:"
+          echo "  npx smee-client --url https://smee.io/haris-jenkins-automation --target http://localhost:8080/github-webhook/"
