@@ -40,7 +40,7 @@ const io = new Server(httpServer, {
   },
   pingTimeout: 60000,
   pingInterval: 25000,
-  transports: ['websocket', 'polling'] // Enable all transport methods
+  transports: ['websocket', 'polling']//
 })
 
 app.use(cors({
@@ -75,7 +75,7 @@ const transporter = nodemailer.createTransport({
     user: EMAIL_USER,
     pass: EMAIL_PASS
   },
-  debug: true, // Enable debug logging
+  debug: true,
   logger: true  // Enable logging
 })
 
