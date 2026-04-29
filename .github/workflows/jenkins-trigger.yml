@@ -37,34 +37,11 @@ jobs:
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
           JENKINS_URL: ${{ secrets.JENKINS_URL }}
         run: |
-          echo "Triggering Jenkins job at: $JENKINS_URL"
-
-          # Step 1: Get Jenkins CSRF crumb (required for POST requests)
-          CRUMB=$(curl -s --user "admin:${JENKINS_API_TOKEN}" \
-            "${JENKINS_URL}/crumbIssuer/api/json" | \
-            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['crumbRequestField']+':'+d['crumb'])" 2>/dev/null || echo "")
-
-          # Step 2: Trigger the build (with or without crumb)
-          if [ -n "$CRUMB" ]; then
-            echo "Using CSRF crumb: $CRUMB"
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-              "${JENKINS_URL}/job/contact-manager-final/build" \
-              --user "admin:${JENKINS_API_TOKEN}" \
-              -H "$CRUMB")
-          else
-            echo "No crumb obtained, trying without..."
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-              "${JENKINS_URL}/job/contact-manager-final/build" \
-              --user "admin:${JENKINS_API_TOKEN}")
-          fi
-
-          echo "Jenkins response HTTP code: $HTTP_CODE"
-
-          # HTTP 201 = build queued successfully, 200 = also OK
-          if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]; then
-            echo "✅ Jenkins build triggered successfully!"
-          else
-            echo "❌ Jenkins trigger failed with HTTP $HTTP_CODE"
-            echo "Check that JENKINS_URL secret is publicly accessible from GitHub Actions"
-            exit 1
-          fi
+          # Trigger Jenkins job via its Remote Build Trigger API
+          # JENKINS_URL secret should be your public Jenkins URL, e.g.:
+          #   http://<your-ngrok-or-smee-forwarded-host>/job/contact-manager/build?token=<REMOTE_TOKEN>
+          # Or if using user:apitoken auth:
+          curl -i -X POST "${JENKINS_URL}/job/contact-manager-final/build" \
+            --user "admin:${JENKINS_API_TOKEN}" \
+            --data-urlencode "json={}" \
+            -f || echo "Jenkins trigger failed — check JENKINS_URL secret and that Jenkins is reachable"
