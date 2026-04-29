@@ -20,41 +20,27 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          # Swap the placeholder with the real IP from secrets
           sed -i "s/EC2_HOST_PLACEHOLDER/$EC2_HOST/g" Jenkinsfile
-          
-          # Configure Git
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          
-          # Commit and push the change so Jenkins pulls the file with the REAL IP
           git add Jenkinsfile
           git commit -m "Inject EC2 IP for deployment [skip ci]" || echo "No changes to commit"
           git push origin main
 
-      - name: Trigger Jenkins
+      - name: Trigger Jenkins Build
         env:
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
+          JENKINS_URL: ${{ secrets.JENKINS_URL }}
         run: |
-          # Simple trigger. Smee should point to the BUILD root.
-          curl -i -X POST "https://smee.io/haris-jenkins-automation" \
-            --user "admin:$JENKINS_API_TOKEN"
-            "${JENKINS_URL}/job/contact-manager-final/build?token=github-trigger-token")
-
-          echo "Jenkins response: $HTTP_STATUS"
-
-          if [ "$HTTP_STATUS" -eq 201 ] || [ "$HTTP_STATUS" -eq 200 ]; then
-            echo "Jenkins build triggered successfully!"
-          else
-            echo "Token trigger failed (HTTP $HTTP_STATUS). Trying user:token auth..."
-            HTTP_STATUS2=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+          echo "Triggering Jenkins job: contact-manager-final"
+          curl -v -X POST \
+            "${JENKINS_URL}/job/contact-manager-final/build?token=github-trigger-token" \
+            --max-time 30 \
+            -o /dev/null \
+            -w "HTTP Status: %{http_code}\n" \
+            || curl -v -X POST \
               "${JENKINS_URL}/job/contact-manager-final/build" \
-              --user "admin:${JENKINS_API_TOKEN}")
-            echo "Fallback response: $HTTP_STATUS2"
-            if [ "$HTTP_STATUS2" -eq 201 ] || [ "$HTTP_STATUS2" -eq 200 ]; then
-              echo "Jenkins build triggered via API token!"
-            else
-              echo "Jenkins trigger failed — check JENKINS_URL secret and that Jenkins is reachable"
-              exit 1
-            fi
-          fi
+              --user "admin:${JENKINS_API_TOKEN}" \
+              --max-time 30 \
+              -o /dev/null \
+              -w "HTTP Status: %{http_code}\n"
