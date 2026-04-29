@@ -20,9 +20,14 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
+          # Swap the placeholder with the real IP from secrets
           sed -i "s/EC2_HOST_PLACEHOLDER/$EC2_HOST/g" Jenkinsfile
+          
+          # Configure Git
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
+          
+          # Commit and push the change so Jenkins pulls the file with the REAL IP
           git add Jenkinsfile
           git commit -m "Inject EC2 IP for deployment [skip ci]" || echo "No changes to commit"
           git push origin main
@@ -32,15 +37,34 @@ jobs:
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
           JENKINS_URL: ${{ secrets.JENKINS_URL }}
         run: |
-          echo "Triggering Jenkins job: contact-manager-final"
-          curl -v -X POST \
-            "${JENKINS_URL}/job/contact-manager-final/build?token=github-trigger-token" \
-            --max-time 30 \
-            -o /dev/null \
-            -w "HTTP Status: %{http_code}\n" \
-            || curl -v -X POST \
+          echo "Triggering Jenkins job at: $JENKINS_URL"
+
+          # Step 1: Get Jenkins CSRF crumb (required for POST requests)
+          CRUMB=$(curl -s --user "admin:${JENKINS_API_TOKEN}" \
+            "${JENKINS_URL}/crumbIssuer/api/json" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(d['crumbRequestField']+':'+d['crumb'])" 2>/dev/null || echo "")
+
+          # Step 2: Trigger the build (with or without crumb)
+          if [ -n "$CRUMB" ]; then
+            echo "Using CSRF crumb: $CRUMB"
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
               "${JENKINS_URL}/job/contact-manager-final/build" \
               --user "admin:${JENKINS_API_TOKEN}" \
-              --max-time 30 \
-              -o /dev/null \
-              -w "HTTP Status: %{http_code}\n"
+              -H "$CRUMB")
+          else
+            echo "No crumb obtained, trying without..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+              "${JENKINS_URL}/job/contact-manager-final/build" \
+              --user "admin:${JENKINS_API_TOKEN}")
+          fi
+
+          echo "Jenkins response HTTP code: $HTTP_CODE"
+
+          # HTTP 201 = build queued successfully, 200 = also OK
+          if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Jenkins build triggered successfully!"
+          else
+            echo "❌ Jenkins trigger failed with HTTP $HTTP_CODE"
+            echo "Check that JENKINS_URL secret is publicly accessible from GitHub Actions"
+            exit 1
+          fi
