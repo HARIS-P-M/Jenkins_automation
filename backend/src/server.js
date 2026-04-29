@@ -40,7 +40,7 @@ const io = new Server(httpServer, {
   },
   pingTimeout: 60000,
   pingInterval: 25000,
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'] // Enable all transport methods
 })
 
 app.use(cors({
